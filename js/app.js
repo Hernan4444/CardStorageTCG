@@ -255,7 +255,6 @@ function handleFileInput(e) {
 async function processCapture() {
   showStep("step-preview");
   document.getElementById("preview-img").src = "";
-  document.getElementById("preview-detected").textContent = "";
   document.getElementById("preview-img").classList.add("loading");
 
   try {
@@ -265,13 +264,6 @@ async function processCapture() {
     const img = document.getElementById("preview-img");
     img.src = state.croppedDataUrl;
     img.classList.remove("loading");
-
-    document.getElementById("preview-detected").textContent = result.card_detected
-      ? "✔ Carta detectada correctamente"
-      : "⚠ No se detectó la carta automáticamente — se usará la imagen original";
-    document.getElementById("preview-detected").className = result.card_detected
-      ? "detected-ok"
-      : "detected-warn";
   } catch (err) {
     setUploadError(`Error al procesar la imagen: ${err.message}`);
     showStep("step-source");
