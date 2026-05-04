@@ -20,9 +20,30 @@
 
 <!-- ── Gallery ────────────────────────────────────────────────────────────── -->
 <main>
+  <section id="game-browser" class="browser-panel">
+    <h2 class="panel-title">Juegos</h2>
+    <div id="game-list" class="game-list"></div>
+  </section>
+
+  <section id="cards-filter-panel" class="browser-panel" hidden>
+    <h2 class="panel-title">Filtrar por Anime</h2>
+    <div class="filter-row">
+      <select id="anime-filter" multiple size="6" aria-label="Filtro de animes"></select>
+      <div class="filter-actions">
+        <button id="apply-anime-filter-btn" class="btn btn-secondary">Buscar</button>
+        <button id="clear-anime-filter-btn" class="btn btn-secondary">Limpiar</button>
+      </div>
+    </div>
+  </section>
+
   <div id="card-grid"></div>
+  <div id="cards-pagination" class="pagination" hidden>
+    <button id="prev-page-btn" class="btn btn-secondary">← Anterior</button>
+    <span id="page-indicator">Página 1 de 1</span>
+    <button id="next-page-btn" class="btn btn-secondary">Siguiente →</button>
+  </div>
   <p id="empty-state" hidden>
-    No hay cartas aún. ¡Sube la primera con el botón de arriba!
+    Selecciona un juego para ver sus cartas.
   </p>
 </main>
 

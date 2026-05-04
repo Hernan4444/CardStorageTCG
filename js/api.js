@@ -41,9 +41,25 @@ const api = (() => {
       });
     },
 
-    /** List all cards (thumbnail URLs). */
-    getCards() {
-      return _request("GET", "/api/cards");
+    /** List existing game names. */
+    getGames() {
+      return _request("GET", "/api/games");
+    },
+
+    /** List existing anime names, optionally filtered by game. */
+    getAnimes(gameName = "") {
+      const query = gameName ? `?game_name=${encodeURIComponent(gameName)}` : "";
+      return _request("GET", `/api/animes${query}`);
+    },
+
+    /** List cards filtered by game/animes and paginated. */
+    getCards({ gameName = "", animes = [], page = 1, perPage = 20 } = {}) {
+      const params = new URLSearchParams();
+      if (gameName) params.set("game_name", gameName);
+      params.set("page", String(page));
+      params.set("per_page", String(perPage));
+      animes.forEach((anime) => params.append("anime", anime));
+      return _request("GET", `/api/cards?${params.toString()}`);
     },
 
     /** Get a single card including the HD URL. */

@@ -15,6 +15,12 @@ const state = {
   capturedDataUrl: null,   // raw photo taken by the user
   croppedDataUrl: null,    // result of /api/process-image
   cards: [],
+  gameNames: [],
+  animeNames: [],
+  selectedGame: "",
+  selectedAnimes: [],
+  currentPage: 1,
+  totalPages: 1,
   isAdmin: false,
   adminPassword: localStorage.getItem("cardstorageAdminPassword") || "",
   editingCardId: null,
@@ -29,6 +35,14 @@ const ALLOWED_LANGUAGES = ["Español", "Ingles", "Japones", "Chino"];
 // ─── 2. Gallery ──────────────────────────────────────────────────────────────
 
 async function loadGallery() {
+  if (!state.selectedGame) {
+    state.cards = [];
+    renderCards([]);
+    renderPagination();
+    updateAnimeFilter([]);
+    return;
+  }
+
   const grid = document.getElementById("card-grid");
   const empty = document.getElementById("empty-state");
 
@@ -36,28 +50,178 @@ async function loadGallery() {
   empty.hidden = true;
 
   try {
-    const cards = await api.getCards();
+    const result = await api.getCards({
+      gameName: state.selectedGame,
+      animes: state.selectedAnimes,
+      page: state.currentPage,
+      perPage: 20,
+    });
+
+    const cards = result.items || [];
     state.cards = cards;
+    state.currentPage = result.pagination?.page || 1;
+    state.totalPages = result.pagination?.total_pages || 1;
+
     populateGameOptions();
     populateAnimeOptions();
     populateEditGameOptions();
     populateEditAnimeOptions();
 
-    grid.innerHTML = "";
-    if (cards.length === 0) {
-      empty.hidden = false;
-      return;
-    }
-
-    cards.forEach((card) => grid.appendChild(buildCardTile(card)));
+    updateAnimeFilter(result.available_animes || []);
+    renderCards(cards);
+    renderPagination();
   } catch (err) {
     state.cards = [];
-    populateGameOptions();
-    populateAnimeOptions();
-    populateEditGameOptions();
-    populateEditAnimeOptions();
-    grid.innerHTML = `<p class="error-msg">Error al cargar las cartas: ${err.message}</p>`;
+    renderCards([], `Error al cargar las cartas: ${err.message}`);
+    renderPagination();
   }
+}
+
+function renderCards(cards, errorMsg = "") {
+  const grid = document.getElementById("card-grid");
+  const empty = document.getElementById("empty-state");
+
+  grid.innerHTML = "";
+  empty.hidden = true;
+
+  if (errorMsg) {
+    grid.innerHTML = `<p class="error-msg">${escHtml(errorMsg)}</p>`;
+    return;
+  }
+
+  if (!state.selectedGame) {
+    empty.textContent = "Selecciona un juego para ver sus cartas.";
+    empty.hidden = false;
+    return;
+  }
+
+  if (cards.length === 0) {
+    empty.textContent = "No hay cartas para este juego/filtro.";
+    empty.hidden = false;
+    return;
+  }
+
+  cards.forEach((card) => grid.appendChild(buildCardTile(card)));
+}
+
+function renderPagination() {
+  const panel = document.getElementById("cards-pagination");
+  const indicator = document.getElementById("page-indicator");
+  const prevBtn = document.getElementById("prev-page-btn");
+  const nextBtn = document.getElementById("next-page-btn");
+
+  if (!state.selectedGame) {
+    panel.hidden = true;
+    return;
+  }
+
+  panel.hidden = false;
+  indicator.textContent = `Página ${state.currentPage} de ${Math.max(1, state.totalPages)}`;
+  prevBtn.disabled = state.currentPage <= 1;
+  nextBtn.disabled = state.currentPage >= state.totalPages;
+}
+
+async function loadGameNames() {
+  try {
+    const games = await api.getGames();
+    state.gameNames = [...new Set([...(games || []), ...DEFAULT_GAMES])]
+      .filter(Boolean)
+      .sort((left, right) => left.localeCompare(right, "es"));
+  } catch {
+    state.gameNames = [...DEFAULT_GAMES];
+  }
+
+  renderGameList();
+  populateGameOptions();
+  populateEditGameOptions();
+}
+
+async function loadAnimeNames(gameName = "") {
+  try {
+    const animes = await api.getAnimes(gameName);
+    state.animeNames = [...new Set([...(animes || []), ...DEFAULT_ANIMES])]
+      .filter(Boolean)
+      .sort((left, right) => left.localeCompare(right, "es"));
+  } catch {
+    state.animeNames = [...DEFAULT_ANIMES];
+  }
+
+  populateAnimeOptions();
+  populateEditAnimeOptions();
+}
+
+function renderGameList() {
+  const container = document.getElementById("game-list");
+  if (!container) return;
+
+  if (state.gameNames.length === 0) {
+    container.innerHTML = '<p class="card-meta">No hay juegos disponibles aún.</p>';
+    return;
+  }
+
+  container.innerHTML = "";
+  state.gameNames.forEach((game) => {
+    const btn = document.createElement("button");
+    btn.className = `game-pill${state.selectedGame === game ? " active" : ""}`;
+    btn.textContent = game;
+    btn.addEventListener("click", () => selectGame(game));
+    container.appendChild(btn);
+  });
+}
+
+async function selectGame(gameName) {
+  state.selectedGame = gameName;
+  state.selectedAnimes = [];
+  state.currentPage = 1;
+  renderGameList();
+  await loadAnimeNames(gameName);
+  await loadGallery();
+  document.getElementById("cards-filter-panel").hidden = false;
+}
+
+function updateAnimeFilter(availableAnimes) {
+  const animeFilter = document.getElementById("anime-filter");
+  if (!animeFilter) return;
+
+  const selected = new Set(state.selectedAnimes);
+  animeFilter.innerHTML = (availableAnimes || [])
+    .map((anime) => `<option value="${escHtml(anime)}">${escHtml(anime)}</option>`)
+    .join("");
+
+  [...animeFilter.options].forEach((option) => {
+    option.selected = selected.has(option.value);
+  });
+
+  state.selectedAnimes = [...animeFilter.selectedOptions].map((option) => option.value);
+}
+
+function applyAnimeFilter() {
+  const animeFilter = document.getElementById("anime-filter");
+  state.selectedAnimes = [...animeFilter.selectedOptions].map((option) => option.value);
+  state.currentPage = 1;
+  loadGallery();
+}
+
+function clearAnimeFilter() {
+  const animeFilter = document.getElementById("anime-filter");
+  [...animeFilter.options].forEach((option) => {
+    option.selected = false;
+  });
+  state.selectedAnimes = [];
+  state.currentPage = 1;
+  loadGallery();
+}
+
+function goPrevPage() {
+  if (state.currentPage <= 1) return;
+  state.currentPage -= 1;
+  loadGallery();
+}
+
+function goNextPage() {
+  if (state.currentPage >= state.totalPages) return;
+  state.currentPage += 1;
+  loadGallery();
 }
 
 function buildCardTile(card) {
@@ -306,6 +470,8 @@ async function saveCard(e) {
       card_type: cardType,
     });
     closeUploadModal();
+    await loadGameNames();
+    await loadAnimeNames(state.selectedGame || "");
     loadGallery();
   } catch (err) {
     setUploadError(`No se pudo guardar: ${err.message}`);
@@ -331,11 +497,7 @@ function populateGameOptions() {
   const gameSelect = document.getElementById("game_name");
   if (!gameSelect) return;
 
-  const existingGames = state.cards
-    .map((card) => String(card.game_name || "").trim())
-    .filter(Boolean);
-
-  const options = [...new Set([...existingGames, ...DEFAULT_GAMES])]
+  const options = [...new Set([...(state.gameNames || []), ...DEFAULT_GAMES])]
     .sort((left, right) => left.localeCompare(right, "es"));
 
   const currentValue = gameSelect.value;
@@ -360,11 +522,7 @@ function populateAnimeOptions() {
   const animeSelect = document.getElementById("anime");
   if (!animeSelect) return;
 
-  const existingAnimes = state.cards
-    .map((card) => String(card.anime || "").trim())
-    .filter(Boolean);
-
-  const options = [...new Set([...existingAnimes, ...DEFAULT_ANIMES])]
+  const options = [...new Set([...(state.animeNames || []), ...DEFAULT_ANIMES])]
     .sort((left, right) => left.localeCompare(right, "es"));
 
   const currentValue = animeSelect.value;
@@ -430,15 +588,12 @@ function populateEditGameOptions(currentValue = "") {
   const gameSelect = document.getElementById("edit_game_name");
   if (!gameSelect) return;
 
-  const existingGames = state.cards
-    .map((card) => String(card.game_name || "").trim())
-    .filter(Boolean);
-
+  const allGames = [...(state.gameNames || [])];
   if (currentValue && currentValue !== OTHER_GAME_VALUE) {
-    existingGames.push(currentValue);
+    allGames.push(currentValue);
   }
 
-  const options = [...new Set([...existingGames, ...DEFAULT_GAMES])]
+  const options = [...new Set([...allGames, ...DEFAULT_GAMES])]
     .sort((left, right) => left.localeCompare(right, "es"));
 
   const previousValue = gameSelect.value;
@@ -459,15 +614,12 @@ function populateEditAnimeOptions(currentValue = "") {
   const animeSelect = document.getElementById("edit_anime");
   if (!animeSelect) return;
 
-  const existingAnimes = state.cards
-    .map((card) => String(card.anime || "").trim())
-    .filter(Boolean);
-
+  const allAnimes = [...(state.animeNames || [])];
   if (currentValue && currentValue !== OTHER_ANIME_VALUE) {
-    existingAnimes.push(currentValue);
+    allAnimes.push(currentValue);
   }
 
-  const options = [...new Set([...existingAnimes, ...DEFAULT_ANIMES])]
+  const options = [...new Set([...allAnimes, ...DEFAULT_ANIMES])]
     .sort((left, right) => left.localeCompare(right, "es"));
 
   const previousValue = animeSelect.value;
@@ -591,6 +743,8 @@ async function saveEditCard(e) {
     );
 
     closeEditModal();
+    await loadGameNames();
+    await loadAnimeNames(state.selectedGame || "");
     loadGallery();
   } catch (err) {
     handleAdminRequestError(err);
@@ -794,7 +948,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   populateEditGameOptions();
   populateEditAnimeOptions();
   await restoreAdminSession();
-  loadGallery();
+  await loadGameNames();
+  await loadAnimeNames();
+  renderCards([]);
+  renderPagination();
 
   // Upload modal controls
   document.getElementById("admin-toggle-btn").addEventListener("click", toggleAdminMode);
@@ -816,6 +973,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("back-to-preview-btn").addEventListener("click", () =>
     showStep("step-preview")
   );
+
+  // Browser controls
+  document.getElementById("apply-anime-filter-btn").addEventListener("click", applyAnimeFilter);
+  document.getElementById("clear-anime-filter-btn").addEventListener("click", clearAnimeFilter);
+  document.getElementById("prev-page-btn").addEventListener("click", goPrevPage);
+  document.getElementById("next-page-btn").addEventListener("click", goNextPage);
 
   // Edit modal controls
   document.getElementById("close-edit-btn").addEventListener("click", closeEditModal);

@@ -93,10 +93,79 @@ header h1 { font-size: 1.4rem; letter-spacing: .05em; color: var(--accent-h); }
 /* ── Gallery ─────────────────────────────────────────────────────────────── */
 main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
 
+.browser-panel {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-title {
+  font-size: .95rem;
+  color: var(--accent-h);
+  margin-bottom: .7rem;
+}
+
+.game-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.game-pill {
+  border: 1px solid var(--accent);
+  background: var(--surface2);
+  color: var(--text);
+  border-radius: 999px;
+  padding: .45rem .9rem;
+  font-size: .85rem;
+  cursor: pointer;
+}
+
+.game-pill.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.filter-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+#anime-filter {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  min-width: 280px;
+  padding: .5rem;
+}
+
+.filter-actions {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
 #card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1.4rem;
+}
+
+.pagination {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .9rem;
+}
+
+#page-indicator {
+  color: var(--text-muted);
+  font-size: .9rem;
 }
 
 .card-tile {
@@ -298,4 +367,18 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
 
   main   { padding: 1rem; }
   .modal { padding: 1.2rem; }
+
+  .filter-row {
+    flex-direction: column;
+  }
+
+  #anime-filter {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .filter-actions {
+    flex-direction: row;
+    width: 100%;
+  }
 }
