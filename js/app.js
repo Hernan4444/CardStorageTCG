@@ -21,7 +21,9 @@ const state = {
 };
 
 const DEFAULT_GAMES = ["Magic", "Weiss"];
+const DEFAULT_ANIMES = [];
 const OTHER_GAME_VALUE = "__other__";
+const OTHER_ANIME_VALUE = "__other_anime__";
 const ALLOWED_LANGUAGES = ["Español", "Ingles", "Japones", "Chino"];
 
 // ─── 2. Gallery ──────────────────────────────────────────────────────────────
@@ -37,6 +39,9 @@ async function loadGallery() {
     const cards = await api.getCards();
     state.cards = cards;
     populateGameOptions();
+    populateAnimeOptions();
+    populateEditGameOptions();
+    populateEditAnimeOptions();
 
     grid.innerHTML = "";
     if (cards.length === 0) {
@@ -48,6 +53,9 @@ async function loadGallery() {
   } catch (err) {
     state.cards = [];
     populateGameOptions();
+    populateAnimeOptions();
+    populateEditGameOptions();
+    populateEditAnimeOptions();
     grid.innerHTML = `<p class="error-msg">Error al cargar las cartas: ${err.message}</p>`;
   }
 }
@@ -134,6 +142,8 @@ async function openEditCard(card) {
   const languageSelect = document.getElementById("edit_language");
   const cardTypeSelect = document.getElementById("edit_card_type");
   const otherGameInput = document.getElementById("edit_other_game_name");
+  const animeSelect = document.getElementById("edit_anime");
+  const otherAnimeInput = document.getElementById("edit_other_anime_name");
 
   setEditError("");
   populateEditGameOptions(card.game_name);
@@ -146,6 +156,16 @@ async function openEditCard(card) {
     otherGameInput.value = card.game_name;
   }
   toggleEditOtherGameField();
+
+  populateEditAnimeOptions(card.anime || "");
+  if ([...animeSelect.options].some((option) => option.value === (card.anime || ""))) {
+    animeSelect.value = card.anime || "";
+    otherAnimeInput.value = "";
+  } else {
+    animeSelect.value = OTHER_ANIME_VALUE;
+    otherAnimeInput.value = card.anime || "";
+  }
+  toggleEditOtherAnimeField();
 
   languageSelect.value = ALLOWED_LANGUAGES.includes(card.language) ? card.language : "Japones";
   cardTypeSelect.value = card.card_type === "foil" ? "foil" : "normal";
@@ -160,6 +180,7 @@ async function openEditCard(card) {
 function openUploadModal() {
   resetUploadFlow();
   populateGameOptions();
+  populateAnimeOptions();
   showStep("step-source");
   document.getElementById("upload-modal").classList.add("active");
 }
@@ -181,6 +202,7 @@ function resetUploadFlow() {
   document.getElementById("upload-error").textContent = "";
   document.getElementById("metadata-form").reset();
   toggleOtherGameField();
+  toggleOtherAnimeField();
 }
 
 function showStep(stepId) {
@@ -264,10 +286,11 @@ async function saveCard(e) {
   const btn = form.querySelector('button[type="submit"]');
 
   const gameName = getSelectedGameName(form);
+  const anime = getSelectedAnimeName(form);
   const language = form.language.value.trim();
   const cardType = form.card_type.value;
 
-  if (!gameName || !language) {
+  if (!gameName || !anime || !language) {
     setUploadError("Completa todos los campos.");
     return;
   }
@@ -278,6 +301,7 @@ async function saveCard(e) {
   try {
     await api.createCard(state.croppedDataUrl, {
       game_name: gameName,
+      anime,
       language: language,
       card_type: cardType,
     });
@@ -332,6 +356,30 @@ function populateGameOptions() {
   toggleOtherGameField();
 }
 
+function populateAnimeOptions() {
+  const animeSelect = document.getElementById("anime");
+  if (!animeSelect) return;
+
+  const existingAnimes = state.cards
+    .map((card) => String(card.anime || "").trim())
+    .filter(Boolean);
+
+  const options = [...new Set([...existingAnimes, ...DEFAULT_ANIMES])]
+    .sort((left, right) => left.localeCompare(right, "es"));
+
+  const currentValue = animeSelect.value;
+  animeSelect.innerHTML = options
+    .map((anime) => `<option value="${escHtml(anime)}">${escHtml(anime)}</option>`)
+    .join("");
+  animeSelect.insertAdjacentHTML("beforeend", `<option value="${OTHER_ANIME_VALUE}">Otro</option>`);
+
+  if (currentValue && [...animeSelect.options].some((option) => option.value === currentValue)) {
+    animeSelect.value = currentValue;
+  }
+
+  toggleOtherAnimeField();
+}
+
 function toggleOtherGameField() {
   const gameSelect = document.getElementById("game_name");
   const otherGroup = document.getElementById("other-game-group");
@@ -353,6 +401,29 @@ function getSelectedGameName(form) {
   }
 
   return form.other_game_name.value.trim();
+}
+
+function toggleOtherAnimeField() {
+  const animeSelect = document.getElementById("anime");
+  const otherGroup = document.getElementById("other-anime-group");
+  const otherInput = document.getElementById("other_anime_name");
+  if (!animeSelect || !otherGroup || !otherInput) return;
+
+  const showOther = animeSelect.value === OTHER_ANIME_VALUE;
+  otherGroup.hidden = !showOther;
+  otherInput.required = showOther;
+
+  if (!showOther) {
+    otherInput.value = "";
+  }
+}
+
+function getSelectedAnimeName(form) {
+  if (form.anime.value !== OTHER_ANIME_VALUE) {
+    return form.anime.value.trim();
+  }
+
+  return form.other_anime_name.value.trim();
 }
 
 function populateEditGameOptions(currentValue = "") {
@@ -384,6 +455,35 @@ function populateEditGameOptions(currentValue = "") {
   toggleEditOtherGameField();
 }
 
+function populateEditAnimeOptions(currentValue = "") {
+  const animeSelect = document.getElementById("edit_anime");
+  if (!animeSelect) return;
+
+  const existingAnimes = state.cards
+    .map((card) => String(card.anime || "").trim())
+    .filter(Boolean);
+
+  if (currentValue && currentValue !== OTHER_ANIME_VALUE) {
+    existingAnimes.push(currentValue);
+  }
+
+  const options = [...new Set([...existingAnimes, ...DEFAULT_ANIMES])]
+    .sort((left, right) => left.localeCompare(right, "es"));
+
+  const previousValue = animeSelect.value;
+  animeSelect.innerHTML = options
+    .map((anime) => `<option value="${escHtml(anime)}">${escHtml(anime)}</option>`)
+    .join("");
+  animeSelect.insertAdjacentHTML("beforeend", `<option value="${OTHER_ANIME_VALUE}">Otro</option>`);
+
+  const valueToSelect = currentValue || previousValue;
+  if (valueToSelect && [...animeSelect.options].some((option) => option.value === valueToSelect)) {
+    animeSelect.value = valueToSelect;
+  }
+
+  toggleEditOtherAnimeField();
+}
+
 function toggleEditOtherGameField() {
   const gameSelect = document.getElementById("edit_game_name");
   const otherGroup = document.getElementById("edit-other-game-group");
@@ -391,6 +491,21 @@ function toggleEditOtherGameField() {
   if (!gameSelect || !otherGroup || !otherInput) return;
 
   const showOther = gameSelect.value === OTHER_GAME_VALUE;
+  otherGroup.hidden = !showOther;
+  otherInput.required = showOther;
+
+  if (!showOther) {
+    otherInput.value = "";
+  }
+}
+
+function toggleEditOtherAnimeField() {
+  const animeSelect = document.getElementById("edit_anime");
+  const otherGroup = document.getElementById("edit-other-anime-group");
+  const otherInput = document.getElementById("edit_other_anime_name");
+  if (!animeSelect || !otherGroup || !otherInput) return;
+
+  const showOther = animeSelect.value === OTHER_ANIME_VALUE;
   otherGroup.hidden = !showOther;
   otherInput.required = showOther;
 
@@ -407,6 +522,14 @@ function getSelectedEditGameName(form) {
   return form.other_game_name.value.trim();
 }
 
+function getSelectedEditAnimeName(form) {
+  if (form.anime.value !== OTHER_ANIME_VALUE) {
+    return form.anime.value.trim();
+  }
+
+  return form.other_anime_name.value.trim();
+}
+
 function closeEditModal() {
   document.getElementById("edit-modal").classList.remove("active");
   resetEditForm();
@@ -421,7 +544,9 @@ function resetEditForm() {
   state.editingCardId = null;
   setEditError("");
   document.getElementById("edit_other_game_name").value = "";
+  document.getElementById("edit_other_anime_name").value = "";
   populateEditGameOptions();
+  populateEditAnimeOptions();
 }
 
 async function saveEditCard(e) {
@@ -435,10 +560,11 @@ async function saveEditCard(e) {
   const btn = form.querySelector('button[type="submit"]');
 
   const gameName = getSelectedEditGameName(form);
+  const anime = getSelectedEditAnimeName(form);
   const language = form.language.value.trim();
   const cardType = form.card_type.value;
 
-  if (!gameName || !ALLOWED_LANGUAGES.includes(language) || !["normal", "foil"].includes(cardType)) {
+  if (!gameName || !anime || !ALLOWED_LANGUAGES.includes(language) || !["normal", "foil"].includes(cardType)) {
     setEditError("Completa todos los campos correctamente.");
     return;
   }
@@ -457,6 +583,7 @@ async function saveEditCard(e) {
       state.editingCardId,
       {
         game_name: gameName,
+        anime,
         language,
         card_type: cardType,
       },
@@ -608,6 +735,7 @@ async function openDetailModal(id) {
 
     info.innerHTML = `
       <h2>${escHtml(card.game_name)}</h2>
+      <p><strong>Anime:</strong> ${escHtml(card.anime || "-")}</p>
       <p><strong>Idioma:</strong> ${escHtml(card.language)}</p>
       <p><strong>Tipo:</strong> ${escHtml(card.card_type)}</p>
       <p class="card-date">Subida: ${new Date(card.created_at).toLocaleDateString("es")}</p>
@@ -662,7 +790,9 @@ function escHtml(str) {
 document.addEventListener("DOMContentLoaded", async () => {
   // Gallery
   populateGameOptions();
+  populateAnimeOptions();
   populateEditGameOptions();
+  populateEditAnimeOptions();
   await restoreAdminSession();
   loadGallery();
 
@@ -682,6 +812,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   );
   document.getElementById("metadata-form").addEventListener("submit", saveCard);
   document.getElementById("game_name").addEventListener("change", toggleOtherGameField);
+  document.getElementById("anime").addEventListener("change", toggleOtherAnimeField);
   document.getElementById("back-to-preview-btn").addEventListener("click", () =>
     showStep("step-preview")
   );
@@ -691,6 +822,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("cancel-edit-btn").addEventListener("click", closeEditModal);
   document.getElementById("edit-form").addEventListener("submit", saveEditCard);
   document.getElementById("edit_game_name").addEventListener("change", toggleEditOtherGameField);
+  document.getElementById("edit_anime").addEventListener("change", toggleEditOtherAnimeField);
 
   // Admin modal controls
   document.getElementById("close-admin-btn").addEventListener("click", closeAdminModal);

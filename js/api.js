@@ -31,10 +31,11 @@ const api = (() => {
     },
 
     /** Upload cropped image + metadata. Returns the saved Card object. */
-    createCard(imageDataUrl, { game_name, language, card_type }) {
+    createCard(imageDataUrl, { game_name, anime, language, card_type }) {
       return _request("POST", "/api/cards", {
         image: imageDataUrl,
         game_name,
+        anime,
         language,
         card_type,
       });

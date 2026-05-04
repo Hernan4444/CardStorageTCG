@@ -76,6 +76,22 @@
           <select id="game_name" name="game_name" required></select>
         </div>
 
+        <div class="form-group">
+          <label for="anime">Anime</label>
+          <select id="anime" name="anime" required></select>
+        </div>
+
+        <div class="form-group" id="other-anime-group" hidden>
+          <label for="other_anime_name">Otro anime</label>
+          <input
+            id="other_anime_name"
+            name="other_anime_name"
+            type="text"
+            placeholder="Escribe el nombre del anime"
+            maxlength="120"
+          />
+        </div>
+
         <div class="form-group" id="other-game-group" hidden>
           <label for="other_game_name">Otro juego</label>
           <input
@@ -156,6 +172,22 @@
         <select id="edit_game_name" name="game_name" required></select>
       </div>
 
+      <div class="form-group">
+        <label for="edit_anime">Anime</label>
+        <select id="edit_anime" name="anime" required></select>
+      </div>
+
+      <div class="form-group" id="edit-other-anime-group" hidden>
+        <label for="edit_other_anime_name">Otro anime</label>
+        <input
+          id="edit_other_anime_name"
+          name="other_anime_name"
+          type="text"
+          placeholder="Escribe el nombre del anime"
+          maxlength="120"
+        />
+      </div>
+
       <div class="form-group" id="edit-other-game-group" hidden>
         <label for="edit_other_game_name">Otro juego</label>
         <input
@@ -214,7 +246,7 @@
           id="admin_password"
           name="admin_password"
           type="password"
-          placeholder="Ingresa ADMIN_PASSWORD"
+          placeholder="Ingresa contraseña"
           autocomplete="current-password"
           required
         />
