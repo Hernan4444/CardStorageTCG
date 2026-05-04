@@ -257,6 +257,8 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
 .form-actions { display: flex; gap: .8rem; margin-top: .4rem; }
 
 #upload-error { color: var(--danger); font-size: .85rem; min-height: 1.2em; margin-top: .6rem; }
+#edit-error { color: var(--danger); font-size: .85rem; min-height: 1.2em; margin-top: .6rem; }
+#admin-error { color: var(--danger); font-size: .85rem; min-height: 1.2em; margin-top: .6rem; }
 
 /* ── Detail modal ────────────────────────────────────────────────────────── */
 #detail-modal .modal { max-width: 700px; }

@@ -17,6 +17,7 @@ const state = {
   cards: [],
   isAdmin: false,
   adminPassword: localStorage.getItem("cardstorageAdminPassword") || "",
+  editingCardId: null,
 };
 
 const DEFAULT_GAMES = ["Magic", "Weiss"];
@@ -126,45 +127,31 @@ async function openEditCard(card) {
     return;
   }
 
-  const gameName = prompt("Juego", card.game_name);
-  if (gameName === null) return;
+  state.editingCardId = card.id;
 
-  const language = prompt(
-    `Idioma (${ALLOWED_LANGUAGES.join(", ")})`,
-    card.language
-  );
-  if (language === null) return;
+  const form = document.getElementById("edit-form");
+  const gameSelect = document.getElementById("edit_game_name");
+  const languageSelect = document.getElementById("edit_language");
+  const cardTypeSelect = document.getElementById("edit_card_type");
+  const otherGameInput = document.getElementById("edit_other_game_name");
 
-  const cardType = prompt("Tipo (normal o foil)", card.card_type);
-  if (cardType === null) return;
+  setEditError("");
+  populateEditGameOptions(card.game_name);
 
-  const normalizedLanguage = language.trim();
-  const normalizedCardType = cardType.trim().toLowerCase();
-  if (!gameName.trim() || !ALLOWED_LANGUAGES.includes(normalizedLanguage)) {
-    alert("Juego e idioma deben ser válidos.");
-    return;
+  if ([...gameSelect.options].some((option) => option.value === card.game_name)) {
+    gameSelect.value = card.game_name;
+    otherGameInput.value = "";
+  } else {
+    gameSelect.value = OTHER_GAME_VALUE;
+    otherGameInput.value = card.game_name;
   }
+  toggleEditOtherGameField();
 
-  if (!["normal", "foil"].includes(normalizedCardType)) {
-    alert("El tipo debe ser 'normal' o 'foil'.");
-    return;
-  }
+  languageSelect.value = ALLOWED_LANGUAGES.includes(card.language) ? card.language : "Japones";
+  cardTypeSelect.value = card.card_type === "foil" ? "foil" : "normal";
 
-  try {
-    await api.updateCard(
-      card.id,
-      {
-        game_name: gameName.trim(),
-        language: normalizedLanguage,
-        card_type: normalizedCardType,
-      },
-      state.adminPassword
-    );
-    loadGallery();
-  } catch (err) {
-    handleAdminRequestError(err);
-    alert(`No se pudo editar: ${err.message}`);
-  }
+  form.dataset.cardId = String(card.id);
+  document.getElementById("edit-modal").classList.add("active");
 }
 
 // ─── 3. Upload Flow ───────────────────────────────────────────────────────────
@@ -308,6 +295,14 @@ function setUploadError(msg) {
   document.getElementById("upload-error").textContent = msg;
 }
 
+function setEditError(msg) {
+  document.getElementById("edit-error").textContent = msg;
+}
+
+function setAdminError(msg) {
+  document.getElementById("admin-error").textContent = msg;
+}
+
 function populateGameOptions() {
   const gameSelect = document.getElementById("game_name");
   if (!gameSelect) return;
@@ -360,28 +355,185 @@ function getSelectedGameName(form) {
   return form.other_game_name.value.trim();
 }
 
+function populateEditGameOptions(currentValue = "") {
+  const gameSelect = document.getElementById("edit_game_name");
+  if (!gameSelect) return;
+
+  const existingGames = state.cards
+    .map((card) => String(card.game_name || "").trim())
+    .filter(Boolean);
+
+  if (currentValue && currentValue !== OTHER_GAME_VALUE) {
+    existingGames.push(currentValue);
+  }
+
+  const options = [...new Set([...existingGames, ...DEFAULT_GAMES])]
+    .sort((left, right) => left.localeCompare(right, "es"));
+
+  const previousValue = gameSelect.value;
+  gameSelect.innerHTML = options
+    .map((game) => `<option value="${escHtml(game)}">${escHtml(game)}</option>`)
+    .join("");
+  gameSelect.insertAdjacentHTML("beforeend", `<option value="${OTHER_GAME_VALUE}">Otro</option>`);
+
+  const valueToSelect = currentValue || previousValue;
+  if (valueToSelect && [...gameSelect.options].some((option) => option.value === valueToSelect)) {
+    gameSelect.value = valueToSelect;
+  }
+
+  toggleEditOtherGameField();
+}
+
+function toggleEditOtherGameField() {
+  const gameSelect = document.getElementById("edit_game_name");
+  const otherGroup = document.getElementById("edit-other-game-group");
+  const otherInput = document.getElementById("edit_other_game_name");
+  if (!gameSelect || !otherGroup || !otherInput) return;
+
+  const showOther = gameSelect.value === OTHER_GAME_VALUE;
+  otherGroup.hidden = !showOther;
+  otherInput.required = showOther;
+
+  if (!showOther) {
+    otherInput.value = "";
+  }
+}
+
+function getSelectedEditGameName(form) {
+  if (form.game_name.value !== OTHER_GAME_VALUE) {
+    return form.game_name.value.trim();
+  }
+
+  return form.other_game_name.value.trim();
+}
+
+function closeEditModal() {
+  document.getElementById("edit-modal").classList.remove("active");
+  resetEditForm();
+}
+
+function resetEditForm() {
+  const form = document.getElementById("edit-form");
+  if (!form) return;
+
+  form.reset();
+  form.dataset.cardId = "";
+  state.editingCardId = null;
+  setEditError("");
+  document.getElementById("edit_other_game_name").value = "";
+  populateEditGameOptions();
+}
+
+async function saveEditCard(e) {
+  e.preventDefault();
+  if (!state.isAdmin || !state.adminPassword) {
+    setEditError("Debes desbloquear el modo admin para editar cartas.");
+    return;
+  }
+
+  const form = e.target;
+  const btn = form.querySelector('button[type="submit"]');
+
+  const gameName = getSelectedEditGameName(form);
+  const language = form.language.value.trim();
+  const cardType = form.card_type.value;
+
+  if (!gameName || !ALLOWED_LANGUAGES.includes(language) || !["normal", "foil"].includes(cardType)) {
+    setEditError("Completa todos los campos correctamente.");
+    return;
+  }
+
+  if (!state.editingCardId) {
+    setEditError("No se encontró la carta a editar.");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Guardando…";
+  setEditError("");
+
+  try {
+    await api.updateCard(
+      state.editingCardId,
+      {
+        game_name: gameName,
+        language,
+        card_type: cardType,
+      },
+      state.adminPassword
+    );
+
+    closeEditModal();
+    loadGallery();
+  } catch (err) {
+    handleAdminRequestError(err);
+    setEditError(`No se pudo guardar: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Guardar cambios";
+  }
+}
+
 async function toggleAdminMode() {
   if (state.isAdmin) {
+    closeEditModal();
+    closeAdminModal();
     clearAdminSession();
     renderAdminState();
     loadGallery();
     return;
   }
 
-  const password = prompt("Ingresa la ADMIN_PASSWORD");
-  if (!password) return;
+  openAdminModal();
+}
+
+function openAdminModal() {
+  const form = document.getElementById("admin-form");
+  const input = document.getElementById("admin_password");
+
+  form.reset();
+  setAdminError("");
+  document.getElementById("admin-modal").classList.add("active");
+  input.focus();
+}
+
+function closeAdminModal() {
+  document.getElementById("admin-modal").classList.remove("active");
+  document.getElementById("admin-form").reset();
+  setAdminError("");
+}
+
+async function submitAdminLogin(e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const btn = form.querySelector('button[type="submit"]');
+  const password = form.admin_password.value.trim();
+
+  if (!password) {
+    setAdminError("Ingresa la contraseña admin.");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Validando…";
+  setAdminError("");
 
   try {
     await api.verifyAdmin(password);
     state.isAdmin = true;
     state.adminPassword = password;
     localStorage.setItem("cardstorageAdminPassword", password);
+    closeAdminModal();
     renderAdminState();
     loadGallery();
   } catch (err) {
     clearAdminSession();
     renderAdminState();
-    alert(`Contraseña incorrecta: ${err.message}`);
+    setAdminError(`Contraseña incorrecta: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Entrar";
   }
 }
 
@@ -422,6 +574,8 @@ function handleAdminRequestError(err) {
     return;
   }
 
+  closeEditModal();
+  closeAdminModal();
   clearAdminSession();
   renderAdminState();
   loadGallery();
@@ -508,6 +662,7 @@ function escHtml(str) {
 document.addEventListener("DOMContentLoaded", async () => {
   // Gallery
   populateGameOptions();
+  populateEditGameOptions();
   await restoreAdminSession();
   loadGallery();
 
@@ -531,6 +686,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     showStep("step-preview")
   );
 
+  // Edit modal controls
+  document.getElementById("close-edit-btn").addEventListener("click", closeEditModal);
+  document.getElementById("cancel-edit-btn").addEventListener("click", closeEditModal);
+  document.getElementById("edit-form").addEventListener("submit", saveEditCard);
+  document.getElementById("edit_game_name").addEventListener("change", toggleEditOtherGameField);
+
+  // Admin modal controls
+  document.getElementById("close-admin-btn").addEventListener("click", closeAdminModal);
+  document.getElementById("cancel-admin-btn").addEventListener("click", closeAdminModal);
+  document.getElementById("admin-form").addEventListener("submit", submitAdminLogin);
+
   // Detail modal controls
   document.getElementById("close-detail-btn").addEventListener("click", closeDetailModal);
   document.getElementById("detail-hd-btn").addEventListener("click", loadHD);
@@ -541,5 +707,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   document.getElementById("detail-modal").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) closeDetailModal();
+  });
+  document.getElementById("edit-modal").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeEditModal();
+  });
+  document.getElementById("admin-modal").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeAdminModal();
   });
 });
