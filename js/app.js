@@ -26,7 +26,7 @@ const state = {
   editingCardId: null,
 };
 
-const DEFAULT_GAMES = ["Magic", "Weiss"];
+const DEFAULT_GAMES = ["Weiss", "Magic"];
 const DEFAULT_SERIES = [];
 const OTHER_GAME_VALUE = "__other__";
 const OTHER_SERIES_VALUE = "__other_series__";
@@ -245,10 +245,6 @@ function buildCardTile(card) {
         class="card-thumb"
       />
       ${card.card_type === "foil" ? '<span class="badge badge-foil">Foil</span>' : ""}
-    </div>
-    <div class="card-info">
-      <h3 class="card-title">${escHtml(card.game_name)}</h3>
-      <p class="card-meta">${escHtml(card.language)}</p>
     </div>
     <div class="card-actions">
       <button class="btn btn-detail" data-id="${card.id}">Ver detalle</button>
@@ -513,6 +509,8 @@ function populateGameOptions() {
 
   if (currentValue && [...gameSelect.options].some((option) => option.value === currentValue)) {
     gameSelect.value = currentValue;
+  } else if ([...gameSelect.options].some((option) => option.value === "Weiss")) {
+    gameSelect.value = "Weiss";
   }
 
   toggleOtherGameField();
@@ -843,11 +841,13 @@ function clearAdminSession() {
 function renderAdminState() {
   const status = document.getElementById("admin-status");
   const toggleButton = document.getElementById("admin-toggle-btn");
-  if (!status || !toggleButton) return;
+  const uploadButton = document.getElementById("open-upload-btn");
+  if (!status || !toggleButton || !uploadButton) return;
 
   status.textContent = state.isAdmin ? "Modo admin activo" : "Modo lectura";
   status.classList.toggle("is-admin", state.isAdmin);
   toggleButton.textContent = state.isAdmin ? "Salir admin" : "Desbloquear admin";
+  uploadButton.hidden = !state.isAdmin;
 }
 
 function handleAdminRequestError(err) {
