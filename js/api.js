@@ -5,10 +5,13 @@
 const api = (() => {
   const base = () => CONFIG.API_BASE_URL;
 
-  async function _request(method, path, body = null) {
+  async function _request(method, path, body = null, headers = {}) {
     const opts = {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+      },
     };
     if (body !== null) opts.body = JSON.stringify(body);
 
@@ -47,14 +50,23 @@ const api = (() => {
       return _request("GET", `/api/cards/${id}`);
     },
 
+    /** Check whether the provided admin password is valid. */
+    verifyAdmin(password) {
+      return _request("POST", "/api/admin/verify", { password });
+    },
+
     /** Update metadata fields on an existing card. */
-    updateCard(id, fields) {
-      return _request("PATCH", `/api/cards/${id}`, fields);
+    updateCard(id, fields, adminPassword) {
+      return _request("PATCH", `/api/cards/${id}`, fields, {
+        "X-Admin-Password": adminPassword,
+      });
     },
 
     /** Delete a card (also removes it from Cloudinary). */
-    deleteCard(id) {
-      return _request("DELETE", `/api/cards/${id}`);
+    deleteCard(id, adminPassword) {
+      return _request("DELETE", `/api/cards/${id}`, null, {
+        "X-Admin-Password": adminPassword,
+      });
     },
   };
 })();

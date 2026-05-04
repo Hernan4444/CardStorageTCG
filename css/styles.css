@@ -40,6 +40,21 @@ header {
 
 header h1 { font-size: 1.4rem; letter-spacing: .05em; color: var(--accent-h); }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.admin-status {
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+
+.admin-status.is-admin {
+  color: var(--ok);
+}
+
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
@@ -63,6 +78,9 @@ header h1 { font-size: 1.4rem; letter-spacing: .05em; color: var(--accent-h); }
 
 .btn-detail { background: var(--accent); color: #fff; font-size: .8rem; padding: .4rem .9rem; }
 .btn-detail:hover { background: var(--accent-h); }
+
+.btn-admin { background: var(--surface2); color: var(--text); font-size: .8rem; padding: .4rem .9rem; }
+.btn-admin:hover { background: var(--accent); }
 
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-danger:hover { filter: brightness(1.15); }
@@ -264,7 +282,18 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  header { padding: .8rem 1rem; }
+  header {
+    padding: .8rem 1rem;
+    flex-direction: column;
+    gap: .8rem;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   main   { padding: 1rem; }
   .modal { padding: 1.2rem; }
 }
