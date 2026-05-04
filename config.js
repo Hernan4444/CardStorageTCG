@@ -11,5 +11,5 @@ const CONFIG = {
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
       ? "http://localhost:5000"
-      : "https://your-cardstorage-backend.onrender.com", // ← update after deploy
+      : "https://cardstoragetcg-backend.onrender.com", // ← update after deploy
 };
