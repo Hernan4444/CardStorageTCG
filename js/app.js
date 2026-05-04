@@ -265,8 +265,8 @@ async function processCapture() {
     img.src = state.croppedDataUrl;
     img.classList.remove("loading");
   } catch (err) {
-    setUploadError(`Error al procesar la imagen: ${err.message}`);
-    showStep("step-source");
+    document.getElementById("preview-img").classList.remove("loading");
+    setUploadError(err.message);
   }
 }
 
