@@ -31,11 +31,11 @@ const api = (() => {
     },
 
     /** Upload cropped image + metadata. Returns the saved Card object. */
-    createCard(imageDataUrl, { game_name, anime, language, card_type }) {
+    createCard(imageDataUrl, { game_name, series, language, card_type }) {
       return _request("POST", "/api/cards", {
         image: imageDataUrl,
         game_name,
-        anime,
+        anime: series,
         language,
         card_type,
       });
@@ -46,19 +46,19 @@ const api = (() => {
       return _request("GET", "/api/games");
     },
 
-    /** List existing anime names, optionally filtered by game. */
-    getAnimes(gameName = "") {
+    /** List existing series names, optionally filtered by game. */
+    getSeries(gameName = "") {
       const query = gameName ? `?game_name=${encodeURIComponent(gameName)}` : "";
       return _request("GET", `/api/animes${query}`);
     },
 
-    /** List cards filtered by game/animes and paginated. */
-    getCards({ gameName = "", animes = [], page = 1, perPage = 20 } = {}) {
+    /** List cards filtered by game/series and paginated. */
+    getCards({ gameName = "", series = [], page = 1, perPage = 20 } = {}) {
       const params = new URLSearchParams();
       if (gameName) params.set("game_name", gameName);
       params.set("page", String(page));
       params.set("per_page", String(perPage));
-      animes.forEach((anime) => params.append("anime", anime));
+      series.forEach((serie) => params.append("anime", serie));
       return _request("GET", `/api/cards?${params.toString()}`);
     },
 

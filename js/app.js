@@ -16,9 +16,9 @@ const state = {
   croppedDataUrl: null,    // result of /api/process-image
   cards: [],
   gameNames: [],
-  animeNames: [],
+  seriesNames: [],
   selectedGame: "",
-  selectedAnimes: [],
+  selectedSeries: [],
   currentPage: 1,
   totalPages: 1,
   isAdmin: false,
@@ -27,9 +27,9 @@ const state = {
 };
 
 const DEFAULT_GAMES = ["Magic", "Weiss"];
-const DEFAULT_ANIMES = [];
+const DEFAULT_SERIES = [];
 const OTHER_GAME_VALUE = "__other__";
-const OTHER_ANIME_VALUE = "__other_anime__";
+const OTHER_SERIES_VALUE = "__other_series__";
 const ALLOWED_LANGUAGES = ["Español", "Ingles", "Japones", "Chino"];
 
 // ─── 2. Gallery ──────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ async function loadGallery() {
     state.cards = [];
     renderCards([]);
     renderPagination();
-    updateAnimeFilter([]);
+    updateSeriesFilter([]);
     return;
   }
 
@@ -52,7 +52,7 @@ async function loadGallery() {
   try {
     const result = await api.getCards({
       gameName: state.selectedGame,
-      animes: state.selectedAnimes,
+      series: state.selectedSeries,
       page: state.currentPage,
       perPage: 20,
     });
@@ -63,11 +63,11 @@ async function loadGallery() {
     state.totalPages = result.pagination?.total_pages || 1;
 
     populateGameOptions();
-    populateAnimeOptions();
+    populateSeriesOptions();
     populateEditGameOptions();
-    populateEditAnimeOptions();
+    populateEditSeriesOptions();
 
-    updateAnimeFilter(result.available_animes || []);
+    updateSeriesFilter(result.available_animes || []);
     renderCards(cards);
     renderPagination();
   } catch (err) {
@@ -136,18 +136,18 @@ async function loadGameNames() {
   populateEditGameOptions();
 }
 
-async function loadAnimeNames(gameName = "") {
+async function loadSeriesNames(gameName = "") {
   try {
-    const animes = await api.getAnimes(gameName);
-    state.animeNames = [...new Set([...(animes || []), ...DEFAULT_ANIMES])]
+    const series = await api.getSeries(gameName);
+    state.seriesNames = [...new Set([...(series || []), ...DEFAULT_SERIES])]
       .filter(Boolean)
       .sort((left, right) => left.localeCompare(right, "es"));
   } catch {
-    state.animeNames = [...DEFAULT_ANIMES];
+    state.seriesNames = [...DEFAULT_SERIES];
   }
 
-  populateAnimeOptions();
-  populateEditAnimeOptions();
+  populateSeriesOptions();
+  populateEditSeriesOptions();
 }
 
 function renderGameList() {
@@ -171,43 +171,43 @@ function renderGameList() {
 
 async function selectGame(gameName) {
   state.selectedGame = gameName;
-  state.selectedAnimes = [];
+  state.selectedSeries = [];
   state.currentPage = 1;
   renderGameList();
-  await loadAnimeNames(gameName);
+  await loadSeriesNames(gameName);
   await loadGallery();
   document.getElementById("cards-filter-panel").hidden = false;
 }
 
-function updateAnimeFilter(availableAnimes) {
-  const animeFilter = document.getElementById("anime-filter");
-  if (!animeFilter) return;
+function updateSeriesFilter(availableSeries) {
+  const seriesFilter = document.getElementById("series-filter");
+  if (!seriesFilter) return;
 
-  const selected = new Set(state.selectedAnimes);
-  animeFilter.innerHTML = (availableAnimes || [])
-    .map((anime) => `<option value="${escHtml(anime)}">${escHtml(anime)}</option>`)
+  const selected = new Set(state.selectedSeries);
+  seriesFilter.innerHTML = (availableSeries || [])
+    .map((serie) => `<option value="${escHtml(serie)}">${escHtml(serie)}</option>`)
     .join("");
 
-  [...animeFilter.options].forEach((option) => {
+  [...seriesFilter.options].forEach((option) => {
     option.selected = selected.has(option.value);
   });
 
-  state.selectedAnimes = [...animeFilter.selectedOptions].map((option) => option.value);
+  state.selectedSeries = [...seriesFilter.selectedOptions].map((option) => option.value);
 }
 
-function applyAnimeFilter() {
-  const animeFilter = document.getElementById("anime-filter");
-  state.selectedAnimes = [...animeFilter.selectedOptions].map((option) => option.value);
+function applySeriesFilter() {
+  const seriesFilter = document.getElementById("series-filter");
+  state.selectedSeries = [...seriesFilter.selectedOptions].map((option) => option.value);
   state.currentPage = 1;
   loadGallery();
 }
 
-function clearAnimeFilter() {
-  const animeFilter = document.getElementById("anime-filter");
-  [...animeFilter.options].forEach((option) => {
+function clearSeriesFilter() {
+  const seriesFilter = document.getElementById("series-filter");
+  [...seriesFilter.options].forEach((option) => {
     option.selected = false;
   });
-  state.selectedAnimes = [];
+  state.selectedSeries = [];
   state.currentPage = 1;
   loadGallery();
 }
@@ -306,8 +306,8 @@ async function openEditCard(card) {
   const languageSelect = document.getElementById("edit_language");
   const cardTypeSelect = document.getElementById("edit_card_type");
   const otherGameInput = document.getElementById("edit_other_game_name");
-  const animeSelect = document.getElementById("edit_anime");
-  const otherAnimeInput = document.getElementById("edit_other_anime_name");
+  const seriesSelect = document.getElementById("edit_series");
+  const otherSeriesInput = document.getElementById("edit_other_series_name");
 
   setEditError("");
   populateEditGameOptions(card.game_name);
@@ -321,15 +321,15 @@ async function openEditCard(card) {
   }
   toggleEditOtherGameField();
 
-  populateEditAnimeOptions(card.anime || "");
-  if ([...animeSelect.options].some((option) => option.value === (card.anime || ""))) {
-    animeSelect.value = card.anime || "";
-    otherAnimeInput.value = "";
+  populateEditSeriesOptions(card.anime || "");
+  if ([...seriesSelect.options].some((option) => option.value === (card.anime || ""))) {
+    seriesSelect.value = card.anime || "";
+    otherSeriesInput.value = "";
   } else {
-    animeSelect.value = OTHER_ANIME_VALUE;
-    otherAnimeInput.value = card.anime || "";
+    seriesSelect.value = OTHER_SERIES_VALUE;
+    otherSeriesInput.value = card.anime || "";
   }
-  toggleEditOtherAnimeField();
+  toggleEditOtherSeriesField();
 
   languageSelect.value = ALLOWED_LANGUAGES.includes(card.language) ? card.language : "Japones";
   cardTypeSelect.value = card.card_type === "foil" ? "foil" : "normal";
@@ -344,7 +344,7 @@ async function openEditCard(card) {
 function openUploadModal() {
   resetUploadFlow();
   populateGameOptions();
-  populateAnimeOptions();
+  populateSeriesOptions();
   showStep("step-source");
   document.getElementById("upload-modal").classList.add("active");
 }
@@ -366,7 +366,7 @@ function resetUploadFlow() {
   document.getElementById("upload-error").textContent = "";
   document.getElementById("metadata-form").reset();
   toggleOtherGameField();
-  toggleOtherAnimeField();
+  toggleOtherSeriesField();
 }
 
 function showStep(stepId) {
@@ -450,11 +450,11 @@ async function saveCard(e) {
   const btn = form.querySelector('button[type="submit"]');
 
   const gameName = getSelectedGameName(form);
-  const anime = getSelectedAnimeName(form);
+  const series = getSelectedSeriesName(form);
   const language = form.language.value.trim();
   const cardType = form.card_type.value;
 
-  if (!gameName || !anime || !language) {
+  if (!gameName || !series || !language) {
     setUploadError("Completa todos los campos.");
     return;
   }
@@ -465,13 +465,13 @@ async function saveCard(e) {
   try {
     await api.createCard(state.croppedDataUrl, {
       game_name: gameName,
-      anime,
+      series,
       language: language,
       card_type: cardType,
     });
     closeUploadModal();
     await loadGameNames();
-    await loadAnimeNames(state.selectedGame || "");
+    await loadSeriesNames(state.selectedGame || "");
     loadGallery();
   } catch (err) {
     setUploadError(`No se pudo guardar: ${err.message}`);
@@ -518,24 +518,24 @@ function populateGameOptions() {
   toggleOtherGameField();
 }
 
-function populateAnimeOptions() {
-  const animeSelect = document.getElementById("anime");
-  if (!animeSelect) return;
+function populateSeriesOptions() {
+  const seriesSelect = document.getElementById("series");
+  if (!seriesSelect) return;
 
-  const options = [...new Set([...(state.animeNames || []), ...DEFAULT_ANIMES])]
+  const options = [...new Set([...(state.seriesNames || []), ...DEFAULT_SERIES])]
     .sort((left, right) => left.localeCompare(right, "es"));
 
-  const currentValue = animeSelect.value;
-  animeSelect.innerHTML = options
-    .map((anime) => `<option value="${escHtml(anime)}">${escHtml(anime)}</option>`)
+  const currentValue = seriesSelect.value;
+  seriesSelect.innerHTML = options
+    .map((serie) => `<option value="${escHtml(serie)}">${escHtml(serie)}</option>`)
     .join("");
-  animeSelect.insertAdjacentHTML("beforeend", `<option value="${OTHER_ANIME_VALUE}">Otro</option>`);
+  seriesSelect.insertAdjacentHTML("beforeend", `<option value="${OTHER_SERIES_VALUE}">Otro</option>`);
 
-  if (currentValue && [...animeSelect.options].some((option) => option.value === currentValue)) {
-    animeSelect.value = currentValue;
+  if (currentValue && [...seriesSelect.options].some((option) => option.value === currentValue)) {
+    seriesSelect.value = currentValue;
   }
 
-  toggleOtherAnimeField();
+  toggleOtherSeriesField();
 }
 
 function toggleOtherGameField() {
@@ -561,13 +561,13 @@ function getSelectedGameName(form) {
   return form.other_game_name.value.trim();
 }
 
-function toggleOtherAnimeField() {
-  const animeSelect = document.getElementById("anime");
-  const otherGroup = document.getElementById("other-anime-group");
-  const otherInput = document.getElementById("other_anime_name");
-  if (!animeSelect || !otherGroup || !otherInput) return;
+function toggleOtherSeriesField() {
+  const seriesSelect = document.getElementById("series");
+  const otherGroup = document.getElementById("other-series-group");
+  const otherInput = document.getElementById("other_series_name");
+  if (!seriesSelect || !otherGroup || !otherInput) return;
 
-  const showOther = animeSelect.value === OTHER_ANIME_VALUE;
+  const showOther = seriesSelect.value === OTHER_SERIES_VALUE;
   otherGroup.hidden = !showOther;
   otherInput.required = showOther;
 
@@ -576,12 +576,12 @@ function toggleOtherAnimeField() {
   }
 }
 
-function getSelectedAnimeName(form) {
-  if (form.anime.value !== OTHER_ANIME_VALUE) {
-    return form.anime.value.trim();
+function getSelectedSeriesName(form) {
+  if (form.series.value !== OTHER_SERIES_VALUE) {
+    return form.series.value.trim();
   }
 
-  return form.other_anime_name.value.trim();
+  return form.other_series_name.value.trim();
 }
 
 function populateEditGameOptions(currentValue = "") {
@@ -610,30 +610,30 @@ function populateEditGameOptions(currentValue = "") {
   toggleEditOtherGameField();
 }
 
-function populateEditAnimeOptions(currentValue = "") {
-  const animeSelect = document.getElementById("edit_anime");
-  if (!animeSelect) return;
+function populateEditSeriesOptions(currentValue = "") {
+  const seriesSelect = document.getElementById("edit_series");
+  if (!seriesSelect) return;
 
-  const allAnimes = [...(state.animeNames || [])];
-  if (currentValue && currentValue !== OTHER_ANIME_VALUE) {
-    allAnimes.push(currentValue);
+  const allSeries = [...(state.seriesNames || [])];
+  if (currentValue && currentValue !== OTHER_SERIES_VALUE) {
+    allSeries.push(currentValue);
   }
 
-  const options = [...new Set([...allAnimes, ...DEFAULT_ANIMES])]
+  const options = [...new Set([...allSeries, ...DEFAULT_SERIES])]
     .sort((left, right) => left.localeCompare(right, "es"));
 
-  const previousValue = animeSelect.value;
-  animeSelect.innerHTML = options
-    .map((anime) => `<option value="${escHtml(anime)}">${escHtml(anime)}</option>`)
+  const previousValue = seriesSelect.value;
+  seriesSelect.innerHTML = options
+    .map((serie) => `<option value="${escHtml(serie)}">${escHtml(serie)}</option>`)
     .join("");
-  animeSelect.insertAdjacentHTML("beforeend", `<option value="${OTHER_ANIME_VALUE}">Otro</option>`);
+  seriesSelect.insertAdjacentHTML("beforeend", `<option value="${OTHER_SERIES_VALUE}">Otro</option>`);
 
   const valueToSelect = currentValue || previousValue;
-  if (valueToSelect && [...animeSelect.options].some((option) => option.value === valueToSelect)) {
-    animeSelect.value = valueToSelect;
+  if (valueToSelect && [...seriesSelect.options].some((option) => option.value === valueToSelect)) {
+    seriesSelect.value = valueToSelect;
   }
 
-  toggleEditOtherAnimeField();
+  toggleEditOtherSeriesField();
 }
 
 function toggleEditOtherGameField() {
@@ -651,13 +651,13 @@ function toggleEditOtherGameField() {
   }
 }
 
-function toggleEditOtherAnimeField() {
-  const animeSelect = document.getElementById("edit_anime");
-  const otherGroup = document.getElementById("edit-other-anime-group");
-  const otherInput = document.getElementById("edit_other_anime_name");
-  if (!animeSelect || !otherGroup || !otherInput) return;
+function toggleEditOtherSeriesField() {
+  const seriesSelect = document.getElementById("edit_series");
+  const otherGroup = document.getElementById("edit-other-series-group");
+  const otherInput = document.getElementById("edit_other_series_name");
+  if (!seriesSelect || !otherGroup || !otherInput) return;
 
-  const showOther = animeSelect.value === OTHER_ANIME_VALUE;
+  const showOther = seriesSelect.value === OTHER_SERIES_VALUE;
   otherGroup.hidden = !showOther;
   otherInput.required = showOther;
 
@@ -674,12 +674,12 @@ function getSelectedEditGameName(form) {
   return form.other_game_name.value.trim();
 }
 
-function getSelectedEditAnimeName(form) {
-  if (form.anime.value !== OTHER_ANIME_VALUE) {
-    return form.anime.value.trim();
+function getSelectedEditSeriesName(form) {
+  if (form.series.value !== OTHER_SERIES_VALUE) {
+    return form.series.value.trim();
   }
 
-  return form.other_anime_name.value.trim();
+  return form.other_series_name.value.trim();
 }
 
 function closeEditModal() {
@@ -696,9 +696,9 @@ function resetEditForm() {
   state.editingCardId = null;
   setEditError("");
   document.getElementById("edit_other_game_name").value = "";
-  document.getElementById("edit_other_anime_name").value = "";
+  document.getElementById("edit_other_series_name").value = "";
   populateEditGameOptions();
-  populateEditAnimeOptions();
+  populateEditSeriesOptions();
 }
 
 async function saveEditCard(e) {
@@ -712,11 +712,11 @@ async function saveEditCard(e) {
   const btn = form.querySelector('button[type="submit"]');
 
   const gameName = getSelectedEditGameName(form);
-  const anime = getSelectedEditAnimeName(form);
+  const series = getSelectedEditSeriesName(form);
   const language = form.language.value.trim();
   const cardType = form.card_type.value;
 
-  if (!gameName || !anime || !ALLOWED_LANGUAGES.includes(language) || !["normal", "foil"].includes(cardType)) {
+  if (!gameName || !series || !ALLOWED_LANGUAGES.includes(language) || !["normal", "foil"].includes(cardType)) {
     setEditError("Completa todos los campos correctamente.");
     return;
   }
@@ -735,7 +735,7 @@ async function saveEditCard(e) {
       state.editingCardId,
       {
         game_name: gameName,
-        anime,
+        anime: series,
         language,
         card_type: cardType,
       },
@@ -744,7 +744,7 @@ async function saveEditCard(e) {
 
     closeEditModal();
     await loadGameNames();
-    await loadAnimeNames(state.selectedGame || "");
+    await loadSeriesNames(state.selectedGame || "");
     loadGallery();
   } catch (err) {
     handleAdminRequestError(err);
@@ -889,7 +889,7 @@ async function openDetailModal(id) {
 
     info.innerHTML = `
       <h2>${escHtml(card.game_name)}</h2>
-      <p><strong>Anime:</strong> ${escHtml(card.anime || "-")}</p>
+      <p><strong>Serie:</strong> ${escHtml(card.anime || "-")}</p>
       <p><strong>Idioma:</strong> ${escHtml(card.language)}</p>
       <p><strong>Tipo:</strong> ${escHtml(card.card_type)}</p>
       <p class="card-date">Subida: ${new Date(card.created_at).toLocaleDateString("es")}</p>
@@ -944,12 +944,12 @@ function escHtml(str) {
 document.addEventListener("DOMContentLoaded", async () => {
   // Gallery
   populateGameOptions();
-  populateAnimeOptions();
+  populateSeriesOptions();
   populateEditGameOptions();
-  populateEditAnimeOptions();
+  populateEditSeriesOptions();
   await restoreAdminSession();
   await loadGameNames();
-  await loadAnimeNames();
+  await loadSeriesNames();
   renderCards([]);
   renderPagination();
 
@@ -969,14 +969,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   );
   document.getElementById("metadata-form").addEventListener("submit", saveCard);
   document.getElementById("game_name").addEventListener("change", toggleOtherGameField);
-  document.getElementById("anime").addEventListener("change", toggleOtherAnimeField);
+  document.getElementById("series").addEventListener("change", toggleOtherSeriesField);
   document.getElementById("back-to-preview-btn").addEventListener("click", () =>
     showStep("step-preview")
   );
 
   // Browser controls
-  document.getElementById("apply-anime-filter-btn").addEventListener("click", applyAnimeFilter);
-  document.getElementById("clear-anime-filter-btn").addEventListener("click", clearAnimeFilter);
+  document.getElementById("apply-series-filter-btn").addEventListener("click", applySeriesFilter);
+  document.getElementById("clear-series-filter-btn").addEventListener("click", clearSeriesFilter);
   document.getElementById("prev-page-btn").addEventListener("click", goPrevPage);
   document.getElementById("next-page-btn").addEventListener("click", goNextPage);
 
@@ -985,7 +985,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("cancel-edit-btn").addEventListener("click", closeEditModal);
   document.getElementById("edit-form").addEventListener("submit", saveEditCard);
   document.getElementById("edit_game_name").addEventListener("change", toggleEditOtherGameField);
-  document.getElementById("edit_anime").addEventListener("change", toggleEditOtherAnimeField);
+  document.getElementById("edit_series").addEventListener("change", toggleEditOtherSeriesField);
 
   // Admin modal controls
   document.getElementById("close-admin-btn").addEventListener("click", closeAdminModal);

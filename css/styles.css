@@ -134,7 +134,7 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
   align-items: flex-start;
 }
 
-#anime-filter {
+#series-filter {
   background: var(--surface2);
   color: var(--text);
   border: 1px solid var(--accent);
@@ -372,7 +372,7 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
     flex-direction: column;
   }
 
-  #anime-filter {
+  #series-filter {
     width: 100%;
     min-width: 0;
   }

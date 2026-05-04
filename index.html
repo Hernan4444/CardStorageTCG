@@ -26,12 +26,12 @@
   </section>
 
   <section id="cards-filter-panel" class="browser-panel" hidden>
-    <h2 class="panel-title">Filtrar por Anime</h2>
+    <h2 class="panel-title">Filtrar por Serie</h2>
     <div class="filter-row">
-      <select id="anime-filter" multiple size="6" aria-label="Filtro de animes"></select>
+      <select id="series-filter" multiple size="6" aria-label="Filtro de series"></select>
       <div class="filter-actions">
-        <button id="apply-anime-filter-btn" class="btn btn-secondary">Buscar</button>
-        <button id="clear-anime-filter-btn" class="btn btn-secondary">Limpiar</button>
+        <button id="apply-series-filter-btn" class="btn btn-secondary">Buscar</button>
+        <button id="clear-series-filter-btn" class="btn btn-secondary">Limpiar</button>
       </div>
     </div>
   </section>
@@ -98,17 +98,17 @@
         </div>
 
         <div class="form-group">
-          <label for="anime">Anime</label>
-          <select id="anime" name="anime" required></select>
+          <label for="series">Serie</label>
+          <select id="series" name="series" required></select>
         </div>
 
-        <div class="form-group" id="other-anime-group" hidden>
-          <label for="other_anime_name">Otro anime</label>
+        <div class="form-group" id="other-series-group" hidden>
+          <label for="other_series_name">Otra serie</label>
           <input
-            id="other_anime_name"
-            name="other_anime_name"
+            id="other_series_name"
+            name="other_series_name"
             type="text"
-            placeholder="Escribe el nombre del anime"
+            placeholder="Escribe el nombre de la serie"
             maxlength="120"
           />
         </div>
@@ -194,17 +194,17 @@
       </div>
 
       <div class="form-group">
-        <label for="edit_anime">Anime</label>
-        <select id="edit_anime" name="anime" required></select>
+        <label for="edit_series">Serie</label>
+        <select id="edit_series" name="series" required></select>
       </div>
 
-      <div class="form-group" id="edit-other-anime-group" hidden>
-        <label for="edit_other_anime_name">Otro anime</label>
+      <div class="form-group" id="edit-other-series-group" hidden>
+        <label for="edit_other_series_name">Otra serie</label>
         <input
-          id="edit_other_anime_name"
-          name="other_anime_name"
+          id="edit_other_series_name"
+          name="other_series_name"
           type="text"
-          placeholder="Escribe el nombre del anime"
+          placeholder="Escribe el nombre de la serie"
           maxlength="120"
         />
       </div>
