@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CardStorage</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<header>
+  <h1>🃏 CardStorage</h1>
+  <button id="open-upload-btn" class="btn btn-primary">+ Subir carta</button>
+</header>
+
+<!-- ── Gallery ────────────────────────────────────────────────────────────── -->
+<main>
+  <div id="card-grid"></div>
+  <p id="empty-state" hidden>
+    No hay cartas aún. ¡Sube la primera con el botón de arriba!
+  </p>
+</main>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- Upload Modal                                                             -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="upload-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="upload-title">
+  <div class="modal">
+
+    <div class="modal-header">
+      <h2 id="upload-title">Subir carta</h2>
+      <button id="close-upload-btn" class="btn btn-icon" aria-label="Cerrar">✕</button>
+    </div>
+
+    <!-- Step 1: choose source -->
+    <div id="step-source">
+      <div class="source-buttons">
+        <button id="use-camera-btn" class="btn btn-primary">📷 Tomar foto</button>
+        <button id="use-file-btn"   class="btn btn-secondary">📂 Subir archivo</button>
+      </div>
+      <input
+        id="file-input"
+        type="file"
+        accept="image/*"
+        style="display:none"
+      />
+    </div>
+
+    <!-- Step 2: camera live view -->
+    <div id="step-camera" hidden>
+      <video id="camera-feed" autoplay playsinline></video>
+      <div class="camera-controls">
+        <button id="capture-btn" class="btn btn-primary">📸 Capturar</button>
+      </div>
+    </div>
+
+    <!-- Step 3: card detection preview -->
+    <div id="step-preview" hidden>
+      <img id="preview-img" src="" alt="Vista previa de la carta" />
+      <p id="preview-detected"></p>
+      <div class="preview-actions">
+        <button id="retake-btn"          class="btn btn-secondary">↩ Retomar</button>
+        <button id="confirm-preview-btn" class="btn btn-primary">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: metadata form -->
+    <div id="step-metadata" hidden>
+      <form id="metadata-form" novalidate>
+        <div class="form-group">
+          <label for="game_name">Nombre del juego</label>
+          <input
+            id="game_name"
+            name="game_name"
+            type="text"
+            placeholder="ej. Magic: The Gathering"
+            maxlength="100"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="language">Idioma</label>
+          <input
+            id="language"
+            name="language"
+            type="text"
+            placeholder="ej. Español, English, Japonés…"
+            maxlength="50"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="card_type">Tipo de carta</label>
+          <select id="card_type" name="card_type" required>
+            <option value="normal">Normal</option>
+            <option value="foil">Foil ✨</option>
+          </select>
+        </div>
+
+        <div id="upload-error" role="alert"></div>
+
+        <div class="form-actions">
+          <button type="button" id="back-to-preview-btn" class="btn btn-secondary">← Atrás</button>
+          <button type="submit" class="btn btn-primary">Guardar carta</button>
+        </div>
+      </form>
+    </div>
+
+  </div><!-- /.modal -->
+</div><!-- /#upload-modal -->
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- Detail Modal                                                             -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="detail-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+  <div class="modal">
+
+    <div class="modal-header">
+      <h2 id="detail-title">Detalle de carta</h2>
+      <button id="close-detail-btn" class="btn btn-icon" aria-label="Cerrar">✕</button>
+    </div>
+
+    <img id="detail-img" src="" alt="Imagen de la carta en detalle" />
+
+    <div id="detail-info"></div>
+
+    <div class="detail-actions">
+      <button id="detail-hd-btn" class="btn btn-primary">Ver en HD</button>
+    </div>
+
+  </div><!-- /.modal -->
+</div><!-- /#detail-modal -->
+
+<!-- ── Scripts ────────────────────────────────────────────────────────────── -->
+<script src="config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
