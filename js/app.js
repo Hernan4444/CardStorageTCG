@@ -19,7 +19,7 @@ const state = {
   cards: [],
   gameNames: [],
   seriesNames: [],
-  selectedGame: "",
+  selectedGames: [],
   selectedSeries: [],
   currentPage: 1,
   totalPages: 1,
@@ -37,14 +37,6 @@ const ALLOWED_LANGUAGES = ["Español", "Ingles", "Japones", "Chino"];
 // ─── 2. Gallery ──────────────────────────────────────────────────────────────
 
 async function loadGallery() {
-  if (!state.selectedGame) {
-    state.cards = [];
-    renderCards([]);
-    renderPagination();
-    updateSeriesFilter([]);
-    return;
-  }
-
   const grid = document.getElementById("card-grid");
   const empty = document.getElementById("empty-state");
 
@@ -53,7 +45,7 @@ async function loadGallery() {
 
   try {
     const result = await api.getCards({
-      gameName: state.selectedGame,
+      gameNames: state.selectedGames,
       series: state.selectedSeries,
       page: state.currentPage,
       perPage: 20,
@@ -91,14 +83,8 @@ function renderCards(cards, errorMsg = "") {
     return;
   }
 
-  if (!state.selectedGame) {
-    empty.textContent = "Selecciona un juego para ver sus cartas.";
-    empty.hidden = false;
-    return;
-  }
-
   if (cards.length === 0) {
-    empty.textContent = "No hay cartas para este juego/filtro.";
+    empty.textContent = "No hay cartas para este filtro.";
     empty.hidden = false;
     return;
   }
@@ -111,11 +97,6 @@ function renderPagination() {
   const indicator = document.getElementById("page-indicator");
   const prevBtn = document.getElementById("prev-page-btn");
   const nextBtn = document.getElementById("next-page-btn");
-
-  if (!state.selectedGame) {
-    panel.hidden = true;
-    return;
-  }
 
   panel.hidden = false;
   indicator.textContent = `Página ${state.currentPage} de ${Math.max(1, state.totalPages)}`;
@@ -133,14 +114,14 @@ async function loadGameNames() {
     state.gameNames = [...DEFAULT_GAMES];
   }
 
-  renderGameList();
+  populateGameFilterSelect();
   populateGameOptions();
   populateEditGameOptions();
 }
 
-async function loadSeriesNames(gameName = "") {
+async function loadSeriesNames(gameNames = []) {
   try {
-    const series = await api.getSeries(gameName);
+    const series = await api.getSeries(gameNames);
     state.seriesNames = [...new Set([...(series || []), ...DEFAULT_SERIES])]
       .filter(Boolean)
       .sort((left, right) => left.localeCompare(right, "es"));
@@ -152,33 +133,14 @@ async function loadSeriesNames(gameName = "") {
   populateEditSeriesOptions();
 }
 
-function renderGameList() {
-  const container = document.getElementById("game-list");
-  if (!container) return;
+function populateGameFilterSelect() {
+  const select = document.getElementById("game-filter");
+  if (!select) return;
 
-  if (state.gameNames.length === 0) {
-    container.innerHTML = '<p class="card-meta">No hay juegos disponibles aún.</p>';
-    return;
-  }
-
-  container.innerHTML = "";
-  state.gameNames.forEach((game) => {
-    const btn = document.createElement("button");
-    btn.className = `game-pill${state.selectedGame === game ? " active" : ""}`;
-    btn.textContent = game;
-    btn.addEventListener("click", () => selectGame(game));
-    container.appendChild(btn);
-  });
-}
-
-async function selectGame(gameName) {
-  state.selectedGame = gameName;
-  state.selectedSeries = [];
-  state.currentPage = 1;
-  renderGameList();
-  await loadSeriesNames(gameName);
-  await loadGallery();
-  document.getElementById("cards-filter-panel").hidden = false;
+  const selected = new Set(state.selectedGames);
+  select.innerHTML = state.gameNames
+    .map((game) => `<option value="${escHtml(game)}"${selected.has(game) ? " selected" : ""}>${escHtml(game)}</option>`)
+    .join("");
 }
 
 function updateSeriesFilter(availableSeries) {
@@ -197,20 +159,30 @@ function updateSeriesFilter(availableSeries) {
   state.selectedSeries = [...seriesFilter.selectedOptions].map((option) => option.value);
 }
 
-function applySeriesFilter() {
+async function applyFilter() {
+  const gameSelect = document.getElementById("game-filter");
   const seriesFilter = document.getElementById("series-filter");
-  state.selectedSeries = [...seriesFilter.selectedOptions].map((option) => option.value);
+
+  state.selectedGames = [...gameSelect.selectedOptions].map((o) => o.value);
+  state.selectedSeries = [...seriesFilter.selectedOptions].map((o) => o.value);
   state.currentPage = 1;
+
+  // Refresh available series scoped to selected games
+  await loadSeriesNames(state.selectedGames);
   loadGallery();
 }
 
-function clearSeriesFilter() {
+function clearFilter() {
+  const gameSelect = document.getElementById("game-filter");
   const seriesFilter = document.getElementById("series-filter");
-  [...seriesFilter.options].forEach((option) => {
-    option.selected = false;
-  });
+
+  [...gameSelect.options].forEach((o) => { o.selected = false; });
+  [...seriesFilter.options].forEach((o) => { o.selected = false; });
+
+  state.selectedGames = [];
   state.selectedSeries = [];
   state.currentPage = 1;
+  loadSeriesNames([]);
   loadGallery();
 }
 
@@ -559,7 +531,7 @@ async function saveCard(e) {
     }
     closeUploadModal();
     await loadGameNames();
-    await loadSeriesNames(state.selectedGame || "");
+    await loadSeriesNames(state.selectedGames);
     loadGallery();
   } catch (err) {
     setUploadError(`No se pudo guardar: ${err.message}`);
@@ -834,7 +806,7 @@ async function saveEditCard(e) {
 
     closeEditModal();
     await loadGameNames();
-    await loadSeriesNames(state.selectedGame || "");
+    await loadSeriesNames(state.selectedGames);
     loadGallery();
   } catch (err) {
     handleAdminRequestError(err);
@@ -1050,8 +1022,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   populateEditSeriesOptions();
   await restoreAdminSession();
   await loadGameNames();
-  await loadSeriesNames();
-  renderCards([]);
+  await loadSeriesNames([]);
+  loadGallery();
   renderPagination();
 
   // Upload modal controls
@@ -1082,9 +1054,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     showStep(state.uploadMode === "link" ? "step-link" : "step-preview")
   );
 
-  // Browser controls
-  document.getElementById("apply-series-filter-btn").addEventListener("click", applySeriesFilter);
-  document.getElementById("clear-series-filter-btn").addEventListener("click", clearSeriesFilter);
+  // Filter controls
+  document.getElementById("apply-filter-btn").addEventListener("click", applyFilter);
+  document.getElementById("clear-filter-btn").addEventListener("click", clearFilter);
   document.getElementById("prev-page-btn").addEventListener("click", goPrevPage);
   document.getElementById("next-page-btn").addEventListener("click", goNextPage);
 

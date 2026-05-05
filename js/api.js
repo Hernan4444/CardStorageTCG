@@ -57,16 +57,19 @@ const api = (() => {
       return _request("GET", "/api/games");
     },
 
-    /** List existing series names, optionally filtered by game. */
-    getSeries(gameName = "") {
-      const query = gameName ? `?game_name=${encodeURIComponent(gameName)}` : "";
-      return _request("GET", `/api/animes${query}`);
+    /** List existing series names, optionally filtered by one or more games. */
+    getSeries(gameNames = []) {
+      const games = Array.isArray(gameNames) ? gameNames : (gameNames ? [gameNames] : []);
+      const params = new URLSearchParams();
+      games.forEach((g) => params.append("game_name", g));
+      const qs = params.toString();
+      return _request("GET", `/api/animes${qs ? `?${qs}` : ""}`);
     },
 
-    /** List cards filtered by game/series and paginated. */
-    getCards({ gameName = "", series = [], page = 1, perPage = 20 } = {}) {
+    /** List cards filtered by games/series and paginated. */
+    getCards({ gameNames = [], series = [], page = 1, perPage = 20 } = {}) {
       const params = new URLSearchParams();
-      if (gameName) params.set("game_name", gameName);
+      gameNames.forEach((g) => params.append("game_name", g));
       params.set("page", String(page));
       params.set("per_page", String(perPage));
       series.forEach((serie) => params.append("anime", serie));

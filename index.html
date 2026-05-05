@@ -20,18 +20,20 @@
 
 <!-- ── Gallery ────────────────────────────────────────────────────────────── -->
 <main>
-  <section id="game-browser" class="browser-panel">
-    <h2 class="panel-title">Juegos</h2>
-    <div id="game-list" class="game-list"></div>
-  </section>
-
-  <section id="cards-filter-panel" class="browser-panel" hidden>
-    <h2 class="panel-title">Filtrar por Serie</h2>
+  <section id="cards-filter-panel" class="browser-panel">
+    <h2 class="panel-title">Filtrar</h2>
     <div class="filter-row">
-      <select id="series-filter" multiple size="6" aria-label="Filtro de series"></select>
+      <div class="filter-col">
+        <label class="filter-label" for="game-filter">Juego</label>
+        <select id="game-filter" multiple size="5" aria-label="Filtro de juegos"></select>
+      </div>
+      <div class="filter-col">
+        <label class="filter-label" for="series-filter">Serie</label>
+        <select id="series-filter" multiple size="5" aria-label="Filtro de series"></select>
+      </div>
       <div class="filter-actions">
-        <button id="apply-series-filter-btn" class="btn btn-secondary">Buscar</button>
-        <button id="clear-series-filter-btn" class="btn btn-secondary">Limpiar</button>
+        <button id="apply-filter-btn" class="btn btn-primary">Buscar</button>
+        <button id="clear-filter-btn" class="btn btn-secondary">Limpiar</button>
       </div>
     </div>
   </section>

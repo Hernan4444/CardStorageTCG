@@ -132,15 +132,30 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
   display: flex;
   gap: 1rem;
   align-items: flex-start;
+  flex-wrap: wrap;
 }
 
+.filter-col {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  flex: 1;
+  min-width: 160px;
+}
+
+.filter-label {
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+
+#game-filter,
 #series-filter {
   background: var(--surface2);
   color: var(--text);
   border: 1px solid var(--accent);
   border-radius: 8px;
-  min-width: 280px;
   padding: .5rem;
+  width: 100%;
 }
 
 .filter-actions {
@@ -383,9 +398,8 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
     flex-direction: column;
   }
 
-  #series-filter {
+  .filter-col {
     width: 100%;
-    min-width: 0;
   }
 
   .filter-actions {
