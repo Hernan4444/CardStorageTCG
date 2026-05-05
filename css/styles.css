@@ -211,6 +211,12 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
   justify-content: center;
 }
 
+.badge-language-img {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
 .card-info { padding: .75rem .9rem .4rem; flex: 1; }
 .card-title { font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-meta  { font-size: .78rem; color: var(--text-muted); margin-top: .2rem; }

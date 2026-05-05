@@ -229,20 +229,23 @@ function goNextPage() {
 function getLanguageFlag(language) {
   const normalized = String(language || "").trim().toLowerCase();
   const flagMap = {
-    "español": "🇪🇸",
-    "ingles": "🇺🇸",
-    "inglés": "🇺🇸",
-    "japones": "🇯🇵",
-    "japonés": "🇯🇵",
-    "chino": "🇨🇳",
+    "español": "1f1ea-1f1f8",
+    "ingles": "1f1fa-1f1f8",
+    "inglés": "1f1fa-1f1f8",
+    "japones": "1f1ef-1f1f5",
+    "japonés": "1f1ef-1f1f5",
+    "chino": "1f1e8-1f1f3",
   };
-  return flagMap[normalized] || "🌐";
+  const code = flagMap[normalized] || "1f310";
+  return `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${code}.svg`;
 }
 
 function buildCardTile(card) {
   const article = document.createElement("article");
   article.className = "card-tile";
   article.dataset.id = card.id;
+  const language = String(card.language || "").trim();
+  const languageFlagSrc = getLanguageFlag(language);
 
   const adminActions = state.isAdmin
     ? `
@@ -259,7 +262,9 @@ function buildCardTile(card) {
         loading="lazy"
         class="card-thumb"
       />
-      <span class="badge badge-language" title="${escHtml(card.language)}">${getLanguageFlag(card.language)}</span>
+      <span class="badge badge-language" title="${escHtml(language)}">
+        <img src="${escHtml(languageFlagSrc)}" alt="${escHtml(language)}" class="badge-language-img" loading="lazy" />
+      </span>
     </div>
     <div class="card-actions">
       <button class="btn btn-detail" data-id="${card.id}">Ver detalle</button>
@@ -353,6 +358,11 @@ async function openEditCard(card) {
 
 // -- Step A: Open upload modal and choose source (camera / file)
 function openUploadModal() {
+  if (!state.isAdmin || !state.adminPassword) {
+    alert("Debes desbloquear el modo admin para subir cartas.");
+    return;
+  }
+
   resetUploadFlow();
   populateGameOptions();
   populateSeriesOptions();
@@ -502,6 +512,11 @@ async function saveCard(e) {
   e.preventDefault();
   const form = e.target;
   const btn = form.querySelector('button[type="submit"]');
+
+  if (!state.isAdmin || !state.adminPassword) {
+    setUploadError("Debes desbloquear el modo admin para subir cartas.");
+    return;
+  }
 
   const gameName = getSelectedGameName(form);
   const series = getSelectedSeriesName(form);
@@ -919,12 +934,17 @@ function renderAdminState() {
   const status = document.getElementById("admin-status");
   const toggleButton = document.getElementById("admin-toggle-btn");
   const uploadButton = document.getElementById("open-upload-btn");
+  const uploadModal = document.getElementById("upload-modal");
   if (!status || !toggleButton || !uploadButton) return;
 
   status.textContent = state.isAdmin ? "Modo admin activo" : "Modo lectura";
   status.classList.toggle("is-admin", state.isAdmin);
   toggleButton.textContent = state.isAdmin ? "Salir admin" : "Desbloquear admin";
   uploadButton.hidden = !state.isAdmin;
+
+  if (!state.isAdmin && uploadModal?.classList.contains("active")) {
+    closeUploadModal();
+  }
 }
 
 function handleAdminRequestError(err) {
@@ -954,8 +974,8 @@ async function openDetailModal(id) {
 
   const hdButton = document.getElementById("detail-hd-btn");
   hdButton.dataset.id = id;
-  hdButton.disabled = false;
-  hdButton.hidden = false;
+  hdButton.disabled = true;
+  hdButton.hidden = true;
   hdButton.textContent = "Ver en HD";
 
   try {
@@ -965,10 +985,8 @@ async function openDetailModal(id) {
     img.classList.remove("loading");
 
     img.dataset.hdUrl = card.hd_url || "";
-
-    if (!card.hd_url) {
-      hdButton.hidden = true;
-    }
+    hdButton.hidden = !card.hd_url;
+    hdButton.disabled = !card.hd_url;
 
     info.innerHTML = `
       <h2>${escHtml(card.game_name)}</h2>
