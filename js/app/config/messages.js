@@ -1,0 +1,57 @@
+/**
+ * User-facing text messages.
+ */
+
+export const UI_TEXT = {
+  gallery: {
+    loading: "Cargando cartas...",
+    connectingAttempt: (attempt, total) => `Conectando con el backend... intento ${attempt} de ${total}`,
+    retryingIn: (seconds, attempt, total) => `No se pudo conectar. Reintentando en ${seconds}s... (${attempt}/${total})`,
+    loadError: (detail) => `Error al cargar las cartas: ${detail}`,
+    loadErrorFallback: "Intenta nuevamente en unos segundos.",
+    noCards: "No hay cartas para este filtro.",
+    pageIndicator: (page, total) => `Página ${page} de ${total}`,
+  },
+  admin: {
+    unlockToDelete: "Debes desbloquear el modo admin para eliminar cartas.",
+    unlockToEdit: "Debes desbloquear el modo admin para editar cartas.",
+    unlockToUpload: "Debes desbloquear el modo admin para subir cartas.",
+    enterPassword: "Ingresa la contraseña admin.",
+    wrongPassword: (detail) => `Contraseña incorrecta: ${detail}`,
+    editMissingCard: "No se encontró la carta a editar.",
+    editInvalidFields: "Completa todos los campos correctamente.",
+    deleteFailed: (detail) => `No se pudo eliminar: ${detail}`,
+    statusAdmin: "Modo admin activo",
+    statusReadOnly: "Modo lectura",
+    actionExitAdmin: "Salir admin",
+    actionUnlockAdmin: "Desbloquear admin",
+    saveChanges: "Guardar cambios",
+    validating: "Validando…",
+    loginAction: "Entrar",
+    saveInProgress: "Guardando…",
+    adminRequiredDetail: "Admin password required",
+  },
+  upload: {
+    cameraFallback: "No se pudo acceder a la cámara. Usa 'Subir archivo' en su lugar.",
+    invalidImageFile: "Por favor selecciona una imagen.",
+    invalidLink: "Ingresa un link valido que comience con http:// o https://.",
+    linkNotLoadable: "No se pudo cargar la imagen desde ese link.",
+    missingFields: "Completa todos los campos.",
+    missingLink: "Debes ingresar un link de imagen valido.",
+    missingImage: "Primero debes seleccionar o capturar una imagen.",
+    saveFailed: (detail) => `No se pudo guardar: ${detail}`,
+    saveAction: "Guardar carta",
+  },
+  detail: {
+    loading: "<p>Cargando…</p>",
+    hdAction: "Ver en HD",
+    hdLoading: "Cargando HD…",
+    hdLoaded: "HD cargada ✔",
+    hdRetry: "Error - reintentar",
+    loadError: (detail) => `<p class=\"error-msg\">Error: ${detail}</p>`,
+    seriesLabel: "Serie",
+    languageLabel: "Idioma",
+    typeLabel: "Tipo",
+    uploadDateLabel: "Subida",
+  },
+};

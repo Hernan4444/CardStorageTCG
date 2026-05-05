@@ -2,7 +2,9 @@
  * api.js — thin wrapper around the CardStorage REST API.
  */
 
-const api = (() => {
+import { CONFIG } from "../config.js";
+
+export const api = (() => {
   const base = () => CONFIG.API_BASE_URL;
 
   async function _request(method, path, body = null, headers = {}) {
