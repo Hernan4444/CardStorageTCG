@@ -33,42 +33,85 @@ const DEFAULT_SERIES = [];
 const OTHER_GAME_VALUE = "__other__";
 const OTHER_SERIES_VALUE = "__other_series__";
 const ALLOWED_LANGUAGES = ["Español", "Ingles", "Japones", "Chino"];
+const INITIAL_LOAD_RETRIES = 3;
+const INITIAL_LOAD_RETRY_DELAY_MS = 3000;
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 // ─── 2. Gallery ──────────────────────────────────────────────────────────────
 
-async function loadGallery() {
+function renderGalleryLoading(message) {
+  const grid = document.getElementById("card-grid");
+  const empty = document.getElementById("empty-state");
+  if (!grid || !empty) return;
+
+  grid.innerHTML = `
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">${escHtml(message)}</p>
+    </div>
+  `;
+  empty.hidden = true;
+}
+
+async function loadGallery(options = {}) {
+  const { retries = 1, retryDelayMs = 0, showRetryStatus = false } = options;
   const grid = document.getElementById("card-grid");
   const empty = document.getElementById("empty-state");
 
-  grid.innerHTML = '<div class="loading-spinner"></div>';
-  empty.hidden = true;
+  renderGalleryLoading("Cargando cartas...");
 
-  try {
-    const result = await api.getCards({
-      gameNames: state.selectedGames,
-      series: state.selectedSeries,
-      page: state.currentPage,
-      perPage: 20,
-    });
+  let lastError = null;
+  const maxAttempts = Math.max(1, Number(retries) || 1);
 
-    const cards = result.items || [];
-    state.cards = cards;
-    state.currentPage = result.pagination?.page || 1;
-    state.totalPages = result.pagination?.total_pages || 1;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (showRetryStatus && attempt > 1) {
+      renderGalleryLoading(`Conectando con el backend... intento ${attempt} de ${maxAttempts}`);
+    }
 
-    populateGameOptions();
-    populateSeriesOptions();
-    populateEditGameOptions();
-    populateEditSeriesOptions();
+    try {
+      const result = await api.getCards({
+        gameNames: state.selectedGames,
+        series: state.selectedSeries,
+        page: state.currentPage,
+        perPage: 20,
+      });
 
-    updateSeriesFilter(result.available_animes || []);
-    renderCards(cards);
-    renderPagination();
-  } catch (err) {
-    state.cards = [];
-    renderCards([], `Error al cargar las cartas: ${err.message}`);
-    renderPagination();
+      const cards = result.items || [];
+      state.cards = cards;
+      state.currentPage = result.pagination?.page || 1;
+      state.totalPages = result.pagination?.total_pages || 1;
+
+      populateGameOptions();
+      populateSeriesOptions();
+      populateEditGameOptions();
+      populateEditSeriesOptions();
+
+      updateSeriesFilter(result.available_animes || []);
+      renderCards(cards);
+      renderPagination();
+      return;
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxAttempts) {
+        if (showRetryStatus) {
+          renderGalleryLoading(`No se pudo conectar. Reintentando en ${Math.round(retryDelayMs / 1000)}s... (${attempt}/${maxAttempts})`);
+        }
+        if (retryDelayMs > 0) {
+          await wait(retryDelayMs);
+        }
+        continue;
+      }
+    }
   }
+
+  state.cards = [];
+  state.currentPage = 1;
+  state.totalPages = 1;
+  renderCards([], `Error al cargar las cartas: ${lastError?.message || "Intenta nuevamente en unos segundos."}`);
+  renderPagination();
 }
 
 function renderCards(cards, errorMsg = "") {
@@ -1023,7 +1066,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   await restoreAdminSession();
   await loadGameNames();
   await loadSeriesNames([]);
-  loadGallery();
+  await loadGallery({
+    retries: INITIAL_LOAD_RETRIES,
+    retryDelayMs: INITIAL_LOAD_RETRY_DELAY_MS,
+    showRetryStatus: true,
+  });
   renderPagination();
 
   // Upload modal controls

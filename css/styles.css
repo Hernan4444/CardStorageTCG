@@ -264,6 +264,22 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.loading-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .8rem;
+  min-height: 200px;
+}
+
+.loading-text {
+  color: var(--text-muted);
+  font-size: .92rem;
+  text-align: center;
+}
+
 .error-msg { color: var(--danger); padding: 1rem; }
 
 /* ── Modals – shared ─────────────────────────────────────────────────────── */
