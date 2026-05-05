@@ -197,14 +197,19 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
   position: absolute;
   top: .5rem;
   right: .5rem;
-  font-size: .7rem;
-  font-weight: 700;
-  padding: .2rem .5rem;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: .06em;
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: .25rem .35rem;
+  border-radius: 6px;
+  background: rgba(15, 15, 26, 0.72);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
 }
-.badge-foil { background: var(--foil); color: #1a1a2e; }
+
+.badge-language {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .card-info { padding: .75rem .9rem .4rem; flex: 1; }
 .card-title { font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

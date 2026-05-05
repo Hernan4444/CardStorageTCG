@@ -63,6 +63,7 @@
       <div class="source-buttons">
         <button id="use-camera-btn" class="btn btn-primary">📷 Tomar foto</button>
         <button id="use-file-btn"   class="btn btn-secondary">📂 Subir archivo</button>
+        <button id="use-link-btn"   class="btn btn-secondary">🔗 Subir por link</button>
       </div>
       <input
         id="file-input"
@@ -70,6 +71,24 @@
         accept="image/*"
         style="display:none"
       />
+    </div>
+
+    <!-- Step 2.5: external image link -->
+    <div id="step-link" hidden>
+      <div class="form-group">
+        <label for="link_image_url">Link de imagen</label>
+        <input
+          id="link_image_url"
+          name="link_image_url"
+          type="url"
+          placeholder="https://ejemplo.com/imagen.jpg"
+          maxlength="1200"
+        />
+      </div>
+      <div class="form-actions">
+        <button type="button" id="cancel-link-btn" class="btn btn-secondary">← Atrás</button>
+        <button type="button" id="confirm-link-btn" class="btn btn-primary">Usar este link</button>
+      </div>
     </div>
 
     <!-- Step 2: camera live view -->

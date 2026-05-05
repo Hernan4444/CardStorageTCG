@@ -41,6 +41,17 @@ const api = (() => {
       });
     },
 
+    /** Save metadata + external image URL (without Cloudinary upload). */
+    createCardFromLink(imageUrl, { game_name, series, language, card_type }) {
+      return _request("POST", "/api/cards", {
+        image_url: imageUrl,
+        game_name,
+        anime: series,
+        language,
+        card_type,
+      });
+    },
+
     /** List existing game names. */
     getGames() {
       return _request("GET", "/api/games");
@@ -64,7 +75,7 @@ const api = (() => {
 
     /** Get a single card including the HD URL. */
     getCard(id) {
-      return _request("GET", `/api/cards/${id}`);
+      return _request("GET", `/api/cards/${encodeURIComponent(id)}`);
     },
 
     /** Check whether the provided admin password is valid. */
@@ -74,14 +85,14 @@ const api = (() => {
 
     /** Update metadata fields on an existing card. */
     updateCard(id, fields, adminPassword) {
-      return _request("PATCH", `/api/cards/${id}`, fields, {
+      return _request("PATCH", `/api/cards/${encodeURIComponent(id)}`, fields, {
         "X-Admin-Password": adminPassword,
       });
     },
 
     /** Delete a card (also removes it from Cloudinary). */
     deleteCard(id, adminPassword) {
-      return _request("DELETE", `/api/cards/${id}`, null, {
+      return _request("DELETE", `/api/cards/${encodeURIComponent(id)}`, null, {
         "X-Admin-Password": adminPassword,
       });
     },

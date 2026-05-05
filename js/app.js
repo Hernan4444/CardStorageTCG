@@ -14,6 +14,8 @@
 const state = {
   capturedDataUrl: null,   // raw photo taken by the user
   croppedDataUrl: null,    // result of /api/process-image
+  linkedImageUrl: "",      // external URL when upload source is link
+  uploadMode: "image",    // 'image' or 'link'
   cards: [],
   gameNames: [],
   seriesNames: [],
@@ -224,6 +226,19 @@ function goNextPage() {
   loadGallery();
 }
 
+function getLanguageFlag(language) {
+  const normalized = String(language || "").trim().toLowerCase();
+  const flagMap = {
+    "español": "🇪🇸",
+    "ingles": "🇺🇸",
+    "inglés": "🇺🇸",
+    "japones": "🇯🇵",
+    "japonés": "🇯🇵",
+    "chino": "🇨🇳",
+  };
+  return flagMap[normalized] || "🌐";
+}
+
 function buildCardTile(card) {
   const article = document.createElement("article");
   article.className = "card-tile";
@@ -244,7 +259,7 @@ function buildCardTile(card) {
         loading="lazy"
         class="card-thumb"
       />
-      ${card.card_type === "foil" ? '<span class="badge badge-foil">Foil</span>' : ""}
+      <span class="badge badge-language" title="${escHtml(card.language)}">${getLanguageFlag(card.language)}</span>
     </div>
     <div class="card-actions">
       <button class="btn btn-detail" data-id="${card.id}">Ver detalle</button>
@@ -354,21 +369,60 @@ function closeUploadModal() {
 function resetUploadFlow() {
   state.capturedDataUrl = null;
   state.croppedDataUrl = null;
+  state.linkedImageUrl = "";
+  state.uploadMode = "image";
   document.getElementById("camera-feed").srcObject = null;
   document.getElementById("step-source").hidden = true;
   document.getElementById("step-camera").hidden = true;
+  document.getElementById("step-link").hidden = true;
   document.getElementById("step-preview").hidden = true;
   document.getElementById("step-metadata").hidden = true;
   document.getElementById("upload-error").textContent = "";
+  document.getElementById("link_image_url").value = "";
   document.getElementById("metadata-form").reset();
   toggleOtherGameField();
   toggleOtherSeriesField();
 }
 
 function showStep(stepId) {
-  ["step-source", "step-camera", "step-preview", "step-metadata"].forEach(
+  ["step-source", "step-camera", "step-link", "step-preview", "step-metadata"].forEach(
     (id) => { document.getElementById(id).hidden = id !== stepId; }
   );
+}
+
+function openLinkStep() {
+  setUploadError("");
+  showStep("step-link");
+}
+
+function confirmLinkImage() {
+  const input = document.getElementById("link_image_url");
+  const imageUrl = input.value.trim();
+
+  if (!/^https?:\/\/.+/i.test(imageUrl)) {
+    setUploadError("Ingresa un link valido que comience con http:// o https://.");
+    return;
+  }
+
+  state.linkedImageUrl = imageUrl;
+  state.uploadMode = "link";
+
+  const img = document.getElementById("preview-img");
+  img.classList.add("loading");
+  img.src = imageUrl;
+  img.onload = () => {
+    img.classList.remove("loading");
+    img.onload = null;
+    img.onerror = null;
+    setUploadError("");
+    showStep("step-metadata");
+  };
+  img.onerror = () => {
+    img.classList.remove("loading");
+    img.onload = null;
+    img.onerror = null;
+    setUploadError("No se pudo cargar la imagen desde ese link.");
+  };
 }
 
 // -- Step B: Camera
@@ -401,6 +455,8 @@ function capturePhoto() {
   canvas.height = video.videoHeight;
   canvas.getContext("2d").drawImage(video, 0, 0);
   state.capturedDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+  state.uploadMode = "image";
+  state.linkedImageUrl = "";
   stopCamera();
   processCapture();
 }
@@ -415,6 +471,8 @@ function handleFileInput(e) {
   const reader = new FileReader();
   reader.onload = (ev) => {
     state.capturedDataUrl = ev.target.result;
+    state.uploadMode = "image";
+    state.linkedImageUrl = "";
     processCapture();
   };
   reader.readAsDataURL(file);
@@ -455,16 +513,35 @@ async function saveCard(e) {
     return;
   }
 
+  if (state.uploadMode === "link" && !state.linkedImageUrl) {
+    setUploadError("Debes ingresar un link de imagen valido.");
+    return;
+  }
+
+  if (state.uploadMode !== "link" && !state.croppedDataUrl) {
+    setUploadError("Primero debes seleccionar o capturar una imagen.");
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = "Guardando…";
 
   try {
-    await api.createCard(state.croppedDataUrl, {
-      game_name: gameName,
-      series,
-      language: language,
-      card_type: cardType,
-    });
+    if (state.uploadMode === "link") {
+      await api.createCardFromLink(state.linkedImageUrl, {
+        game_name: gameName,
+        series,
+        language: language,
+        card_type: cardType,
+      });
+    } else {
+      await api.createCard(state.croppedDataUrl, {
+        game_name: gameName,
+        series,
+        language: language,
+        card_type: cardType,
+      });
+    }
     closeUploadModal();
     await loadGameNames();
     await loadSeriesNames(state.selectedGame || "");
@@ -875,9 +952,11 @@ async function openDetailModal(id) {
   img.classList.add("loading");
   info.innerHTML = "<p>Cargando…</p>";
 
-  document.getElementById("detail-hd-btn").dataset.id = id;
-  document.getElementById("detail-hd-btn").disabled = false;
-  document.getElementById("detail-hd-btn").textContent = "Ver en HD";
+  const hdButton = document.getElementById("detail-hd-btn");
+  hdButton.dataset.id = id;
+  hdButton.disabled = false;
+  hdButton.hidden = false;
+  hdButton.textContent = "Ver en HD";
 
   try {
     const card = await api.getCard(id);
@@ -885,7 +964,11 @@ async function openDetailModal(id) {
     img.src = card.thumbnail_url;
     img.classList.remove("loading");
 
-    img.dataset.hdUrl = card.hd_url;
+    img.dataset.hdUrl = card.hd_url || "";
+
+    if (!card.hd_url) {
+      hdButton.hidden = true;
+    }
 
     info.innerHTML = `
       <h2>${escHtml(card.game_name)}</h2>
@@ -958,12 +1041,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("open-upload-btn").addEventListener("click", openUploadModal);
   document.getElementById("close-upload-btn").addEventListener("click", closeUploadModal);
   document.getElementById("use-camera-btn").addEventListener("click", startCamera);
+  document.getElementById("use-link-btn").addEventListener("click", openLinkStep);
+  document.getElementById("confirm-link-btn").addEventListener("click", confirmLinkImage);
+  document.getElementById("cancel-link-btn").addEventListener("click", () => showStep("step-source"));
   document.getElementById("capture-btn").addEventListener("click", capturePhoto);
   document.getElementById("use-file-btn").addEventListener("click", () =>
     document.getElementById("file-input").click()
   );
   document.getElementById("file-input").addEventListener("change", handleFileInput);
-  document.getElementById("retake-btn").addEventListener("click", () => showStep("step-source"));
+  document.getElementById("retake-btn").addEventListener("click", () => {
+    state.uploadMode = "image";
+    state.linkedImageUrl = "";
+    showStep("step-source");
+  });
   document.getElementById("confirm-preview-btn").addEventListener("click", () =>
     showStep("step-metadata")
   );
@@ -971,7 +1061,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("game_name").addEventListener("change", toggleOtherGameField);
   document.getElementById("series").addEventListener("change", toggleOtherSeriesField);
   document.getElementById("back-to-preview-btn").addEventListener("click", () =>
-    showStep("step-preview")
+    showStep(state.uploadMode === "link" ? "step-link" : "step-preview")
   );
 
   // Browser controls
