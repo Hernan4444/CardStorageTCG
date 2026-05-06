@@ -47,6 +47,7 @@ import { closeDetailModal, loadHD } from "../features/detail/detail.js";
 
 export function initializeApp() {
   document.addEventListener("DOMContentLoaded", async () => {
+    state.isBootstrapping = true;
     setGalleryBootstrapping(true);
     renderGalleryLoading("Conectando con el backend...");
 
@@ -65,6 +66,7 @@ export function initializeApp() {
         showRetryStatus: true,
       });
     } finally {
+      state.isBootstrapping = false;
       setGalleryBootstrapping(false);
     }
 

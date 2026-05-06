@@ -140,6 +140,18 @@ export function renderPagination() {
   const prevBtn = document.getElementById("prev-page-btn");
   const nextBtn = document.getElementById("next-page-btn");
 
+  if (!panel || !indicator || !prevBtn || !nextBtn) return;
+
+  if (state.isBootstrapping) {
+    panel.hidden = true;
+    return;
+  }
+
+  if (!state.cards.length || state.totalPages <= 1) {
+    panel.hidden = true;
+    return;
+  }
+
   panel.hidden = false;
   indicator.textContent = UI_TEXT.gallery.pageIndicator(
     state.currentPage,

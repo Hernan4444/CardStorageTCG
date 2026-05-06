@@ -3,6 +3,7 @@
  */
 
 export const state = {
+  isBootstrapping: false,
   capturedDataUrl: null,
   croppedDataUrl: null,
   linkedImageUrl: "",
