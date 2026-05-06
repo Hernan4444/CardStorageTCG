@@ -8,7 +8,9 @@ import {
   loadGallery,
   loadGameNames,
   loadSeriesNames,
+  renderGalleryLoading,
   renderPagination,
+  setGalleryBootstrapping,
   applyFilter,
   clearFilter,
   goPrevPage,
@@ -45,18 +47,27 @@ import { closeDetailModal, loadHD } from "../features/detail/detail.js";
 
 export function initializeApp() {
   document.addEventListener("DOMContentLoaded", async () => {
+    setGalleryBootstrapping(true);
+    renderGalleryLoading("Conectando con el backend...");
+
     populateGameOptions();
     populateSeriesOptions();
     populateEditGameOptions();
     populateEditSeriesOptions();
     await restoreAdminSession();
-    await loadGameNames();
-    await loadSeriesNames([]);
-    await loadGallery({
-      retries: APP_CONFIG.gallery.initialLoadRetries,
-      retryDelayMs: APP_CONFIG.gallery.initialLoadRetryDelayMs,
-      showRetryStatus: true,
-    });
+
+    try {
+      await loadGameNames();
+      await loadSeriesNames([]);
+      await loadGallery({
+        retries: APP_CONFIG.gallery.initialLoadRetries,
+        retryDelayMs: APP_CONFIG.gallery.initialLoadRetryDelayMs,
+        showRetryStatus: true,
+      });
+    } finally {
+      setGalleryBootstrapping(false);
+    }
+
     renderPagination();
 
     document.getElementById("admin-toggle-btn").addEventListener("click", toggleAdminMode);

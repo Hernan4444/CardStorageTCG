@@ -30,6 +30,22 @@ export function renderGalleryLoading(message) {
   empty.hidden = true;
 }
 
+export function setGalleryBootstrapping(isBootstrapping) {
+  const filterPanel = document.getElementById("cards-filter-panel");
+  const pagination = document.getElementById("cards-pagination");
+  const empty = document.getElementById("empty-state");
+
+  if (filterPanel) {
+    filterPanel.hidden = isBootstrapping;
+  }
+  if (pagination) {
+    pagination.hidden = true;
+  }
+  if (empty) {
+    empty.hidden = true;
+  }
+}
+
 export async function loadGallery(options = {}) {
   const {
     retries = 1,
