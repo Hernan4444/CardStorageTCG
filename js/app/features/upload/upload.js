@@ -89,7 +89,6 @@ export function confirmLinkImage() {
 
 let _stream = null;
 
-async function startCamera() {
 export async function startCamera() {
   showStep("step-camera");
   try {
