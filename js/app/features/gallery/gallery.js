@@ -19,6 +19,7 @@ import {
 export function renderGalleryLoading(message) {
   const grid = document.getElementById("card-grid");
   const empty = document.getElementById("empty-state");
+  const pagination = document.getElementById("cards-pagination");
   if (!grid || !empty) return;
 
   grid.innerHTML = `
@@ -28,6 +29,9 @@ export function renderGalleryLoading(message) {
     </div>
   `;
   empty.hidden = true;
+  if (pagination) {
+    pagination.hidden = true;
+  }
 }
 
 export function setGalleryBootstrapping(isBootstrapping) {
