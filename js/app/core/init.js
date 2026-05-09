@@ -87,6 +87,7 @@ export function initializeApp() {
     document.getElementById("retake-btn").addEventListener("click", () => {
       state.uploadMode = "image";
       state.linkedImageUrl = "";
+      state.linkedImageUrls = [];
       showStep("step-source");
     });
     document.getElementById("confirm-preview-btn").addEventListener("click", () =>

@@ -353,6 +353,7 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
 .form-group label { font-size: .88rem; color: var(--text-muted); }
 
 .form-group input,
+.form-group textarea,
 .form-group select {
   background: var(--surface2);
   border: 1px solid var(--accent);
@@ -363,13 +364,25 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
   width: 100%;
 }
 .form-group input:focus,
+.form-group textarea:focus,
 .form-group select:focus { outline: 2px solid var(--accent-h); }
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.hint-text {
+  color: var(--text-muted);
+  font-size: .78rem;
+}
 
 .form-group select option { background: var(--surface2); }
 
 .form-actions { display: flex; gap: .8rem; margin-top: .4rem; }
 
 #upload-error { color: var(--danger); font-size: .85rem; min-height: 1.2em; margin-top: .6rem; }
+.upload-info { color: var(--text-muted); font-size: .82rem; min-height: 1.2em; margin-top: .35rem; }
 #edit-error { color: var(--danger); font-size: .85rem; min-height: 1.2em; margin-top: .6rem; }
 #admin-error { color: var(--danger); font-size: .85rem; min-height: 1.2em; margin-top: .6rem; }
 

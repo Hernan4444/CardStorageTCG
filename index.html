@@ -79,17 +79,18 @@
     <div id="step-link" hidden>
       <div class="form-group">
         <label for="link_image_url">Link de imagen</label>
-        <input
+        <textarea
           id="link_image_url"
           name="link_image_url"
-          type="url"
-          placeholder="https://ejemplo.com/imagen.jpg"
-          maxlength="1200"
-        />
+          placeholder="https://ejemplo.com/imagen1.jpg&#10;https://ejemplo.com/imagen2.jpg"
+          maxlength="120000"
+          rows="5"
+        ></textarea>
+        <small class="hint-text">Puedes pegar uno o varios links, uno por linea.</small>
       </div>
       <div class="form-actions">
         <button type="button" id="cancel-link-btn" class="btn btn-secondary">← Atrás</button>
-        <button type="button" id="confirm-link-btn" class="btn btn-primary">Usar este link</button>
+        <button type="button" id="confirm-link-btn" class="btn btn-primary">Continuar</button>
       </div>
     </div>
 
@@ -164,6 +165,7 @@
         </div>
 
         <div id="upload-error" role="alert"></div>
+        <div id="link-batch-info" class="upload-info" aria-live="polite"></div>
 
         <div class="form-actions">
           <button type="button" id="back-to-preview-btn" class="btn btn-secondary">← Atrás</button>

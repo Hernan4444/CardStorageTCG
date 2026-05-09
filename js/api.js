@@ -54,6 +54,17 @@ export const api = (() => {
       });
     },
 
+    /** Save metadata + many external image URLs in one request. */
+    createCardsFromLinks(imageUrls, { game_name, series, language, card_type }) {
+      return _request("POST", "/api/cards/batch-links", {
+        image_urls: imageUrls,
+        game_name,
+        anime: series,
+        language,
+        card_type,
+      });
+    },
+
     /** List existing game names. */
     getGames() {
       return _request("GET", "/api/games");

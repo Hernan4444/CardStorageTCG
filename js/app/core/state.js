@@ -7,6 +7,7 @@ export const state = {
   capturedDataUrl: null,
   croppedDataUrl: null,
   linkedImageUrl: "",
+  linkedImageUrls: [],
   uploadMode: "image",
   cards: [],
   gameNames: [],

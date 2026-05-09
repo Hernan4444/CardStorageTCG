@@ -32,6 +32,7 @@ export function resetUploadFlow() {
   state.capturedDataUrl = null;
   state.croppedDataUrl = null;
   state.linkedImageUrl = "";
+  state.linkedImageUrls = [];
   state.uploadMode = "image";
   document.getElementById("camera-feed").srcObject = null;
   document.getElementById("step-source").hidden = true;
@@ -41,6 +42,7 @@ export function resetUploadFlow() {
   document.getElementById("step-metadata").hidden = true;
   document.getElementById("upload-error").textContent = "";
   document.getElementById("link_image_url").value = "";
+  document.getElementById("link-batch-info").textContent = "";
   document.getElementById("metadata-form").reset();
   toggleOtherGameField();
   toggleOtherSeriesField();
@@ -57,21 +59,68 @@ export function openLinkStep() {
   showStep("step-link");
 }
 
-export function confirmLinkImage() {
-  const input = document.getElementById("link_image_url");
-  const imageUrl = input.value.trim();
+function isValidHttpUrl(value) {
+  return /^https?:\/\/.+/i.test(value);
+}
 
-  if (!/^https?:\/\/.+/i.test(imageUrl)) {
-    setUploadError(UI_TEXT.upload.invalidLink);
+function parseLinkLines(rawValue) {
+  const urls = rawValue
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  const deduped = [];
+  const seen = new Set();
+  urls.forEach((url) => {
+    if (seen.has(url)) return;
+    seen.add(url);
+    deduped.push(url);
+  });
+
+  return deduped;
+}
+
+function updateLinkBatchInfo() {
+  const linkCount = state.linkedImageUrls.length;
+  const infoEl = document.getElementById("link-batch-info");
+  if (!infoEl) return;
+
+  if (linkCount <= 0) {
+    infoEl.textContent = "";
     return;
   }
 
-  state.linkedImageUrl = imageUrl;
+  if (linkCount === 1) {
+    infoEl.textContent = UI_TEXT.upload.singleLinkReady;
+    return;
+  }
+
+  infoEl.textContent = UI_TEXT.upload.multiLinksReady(linkCount);
+}
+
+export function confirmLinkImage() {
+  const input = document.getElementById("link_image_url");
+  const links = parseLinkLines(input.value);
+
+  if (!links.length) {
+    setUploadError(UI_TEXT.upload.missingLink);
+    return;
+  }
+
+  const invalidLinks = links.filter((url) => !isValidHttpUrl(url));
+  if (invalidLinks.length > 0) {
+    setUploadError(UI_TEXT.upload.invalidLinkList(invalidLinks.length));
+    return;
+  }
+
+  state.linkedImageUrls = links;
+  state.linkedImageUrl = links[0];
   state.uploadMode = "link";
+  updateLinkBatchInfo();
 
   const img = document.getElementById("preview-img");
   img.classList.add("loading");
-  img.src = imageUrl;
+  img.src = state.linkedImageUrl;
   img.onload = () => {
     img.classList.remove("loading");
     img.onload = null;
@@ -118,6 +167,7 @@ export function capturePhoto() {
   state.capturedDataUrl = canvas.toDataURL("image/jpeg", 0.92);
   state.uploadMode = "image";
   state.linkedImageUrl = "";
+  state.linkedImageUrls = [];
   stopCamera();
   processCapture();
 }
@@ -134,6 +184,7 @@ export function handleFileInput(e) {
     state.capturedDataUrl = ev.target.result;
     state.uploadMode = "image";
     state.linkedImageUrl = "";
+    state.linkedImageUrls = [];
     processCapture();
   };
   reader.readAsDataURL(file);
@@ -177,7 +228,11 @@ export async function saveCard(e) {
     return;
   }
 
-  if (state.uploadMode === "link" && !state.linkedImageUrl) {
+  const linkUrls = state.linkedImageUrls.length
+    ? state.linkedImageUrls
+    : (state.linkedImageUrl ? [state.linkedImageUrl] : []);
+
+  if (state.uploadMode === "link" && !linkUrls.length) {
     setUploadError(UI_TEXT.upload.missingLink);
     return;
   }
@@ -188,16 +243,34 @@ export async function saveCard(e) {
   }
 
   btn.disabled = true;
-  btn.textContent = UI_TEXT.admin.saveInProgress;
+  btn.textContent =
+    state.uploadMode === "link" && linkUrls.length > 1
+      ? UI_TEXT.upload.batchSaveInProgress
+      : UI_TEXT.admin.saveInProgress;
 
   try {
     if (state.uploadMode === "link") {
-      await api.createCardFromLink(state.linkedImageUrl, {
-        game_name: gameName,
-        series,
-        language,
-        card_type: cardType,
-      });
+      if (linkUrls.length > 1) {
+        const batchResult = await api.createCardsFromLinks(linkUrls, {
+          game_name: gameName,
+          series,
+          language,
+          card_type: cardType,
+        });
+
+        if (batchResult.failed_count > 0) {
+          alert(UI_TEXT.upload.batchPartial(batchResult.created_count, batchResult.failed_count));
+        } else {
+          alert(UI_TEXT.upload.batchSuccess(batchResult.created_count));
+        }
+      } else {
+        await api.createCardFromLink(linkUrls[0], {
+          game_name: gameName,
+          series,
+          language,
+          card_type: cardType,
+        });
+      }
     } else {
       await api.createCard(state.croppedDataUrl, {
         game_name: gameName,
