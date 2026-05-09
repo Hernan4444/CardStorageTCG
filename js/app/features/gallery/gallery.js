@@ -275,6 +275,7 @@ export function getLanguageFlag(language) {
 export function buildCardTile(card) {
   const article = document.createElement("article");
   article.className = "card-tile";
+  if (card.card_type === "foil") article.classList.add("card-tile--foil");
   article.dataset.id = card.id;
   const language = String(card.language || "").trim();
   const languageFlagSrc = getLanguageFlag(language);

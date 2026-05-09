@@ -196,6 +196,61 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
 }
 .card-tile:hover { transform: translateY(-4px); }
 
+/* ── Foil card shimmer effect ────────────────────────────────────────────── */
+.card-tile--foil {
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  box-shadow: var(--shadow), 0 0 16px rgba(180, 120, 255, 0.2);
+}
+
+.card-tile--foil .card-img-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent                   0%,
+    rgba(255, 50,  150, 0.10)    32%,
+    rgba(255, 210, 50,  0.13)    42%,
+    rgba(50,  220, 255, 0.11)    52%,
+    rgba(170, 50,  255, 0.10)    62%,
+    rgba(50,  255, 160, 0.09)    72%,
+    transparent                 100%
+  );
+  background-size: 450% 450%;
+  animation: foil-shimmer 1s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-tile--foil .card-img-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    220deg,
+    transparent               0%,
+    rgba(255,255,255, 0.05)  38%,
+    rgba(255,255,255, 0.10)  50%,
+    rgba(255,255,255, 0.05)  62%,
+    transparent             100%
+  );
+  background-size: 450% 450%;
+  animation: foil-gloss 1s ease-in-out infinite alternate-reverse;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes foil-shimmer {
+  0%   { background-position: 15%  15%; }
+  100% { background-position: 85%  85%; }
+}
+
+@keyframes foil-gloss {
+  0%   { background-position: 80%  80%; }
+  100% { background-position: 20%  20%; }
+}
+
 .card-img-wrap {
   position: relative;
   aspect-ratio: 5 / 7;
