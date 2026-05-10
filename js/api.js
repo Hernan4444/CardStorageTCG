@@ -52,7 +52,8 @@ export const api = (() => {
   createCardsFromImages(imageDataUrls, { game_name, series, language, card_type }) {
     return _request("POST", "/api/cards/batch-images", {
       images: imageDataUrls,
-    },
+    });
+  },
 
     /** Save metadata + external image URL (without Cloudinary upload). */
     createCardFromLink(imageUrl, { game_name, series, language, card_type }) {
