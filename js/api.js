@@ -32,15 +32,26 @@ export const api = (() => {
       return _request("POST", "/api/process-image", { image: imageDataUrl });
     },
 
-    /** Upload cropped image + metadata. Returns the saved Card object. */
-    createCard(imageDataUrl, { game_name, series, language, card_type }) {
-      return _request("POST", "/api/cards", {
-        image: imageDataUrl,
-        game_name,
-        anime: series,
-        language,
-        card_type,
-      });
+  /** Compress multiple images at once. */
+  processImages(imageDataUrls) {
+    return _request("POST", "/api/process-images", { images: imageDataUrls });
+  },
+
+  /** Upload cropped image + metadata. Returns the saved Card object. */
+  createCard(imageDataUrl, { game_name, series, language, card_type }) {
+    return _request("POST", "/api/cards", {
+      image: imageDataUrl,
+      game_name,
+      anime: series,
+      language,
+      card_type,
+    });
+  },
+
+  /** Upload multiple compressed images + shared metadata in one request. */
+  createCardsFromImages(imageDataUrls, { game_name, series, language, card_type }) {
+    return _request("POST", "/api/cards/batch-images", {
+      images: imageDataUrls,
     },
 
     /** Save metadata + external image URL (without Cloudinary upload). */

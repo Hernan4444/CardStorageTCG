@@ -86,6 +86,10 @@ export function initializeApp() {
     document.getElementById("file-input").addEventListener("change", handleFileInput);
     document.getElementById("retake-btn").addEventListener("click", () => {
       state.uploadMode = "image";
+      state.capturedDataUrl = null;
+      state.croppedDataUrl = null;
+      state.capturedDataUrls = [];
+      state.croppedDataUrls = [];
       state.linkedImageUrl = "";
       state.linkedImageUrls = [];
       showStep("step-source");

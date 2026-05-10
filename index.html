@@ -64,13 +64,14 @@
     <div id="step-source">
       <div class="source-buttons">
         <button id="use-camera-btn" class="btn btn-primary">📷 Tomar foto</button>
-        <button id="use-file-btn"   class="btn btn-secondary">📂 Subir archivo</button>
+        <button id="use-file-btn"   class="btn btn-secondary">📂 Subir archivo(s)</button>
         <button id="use-link-btn"   class="btn btn-secondary">🔗 Subir por link</button>
       </div>
       <input
         id="file-input"
         type="file"
         accept="image/*"
+        multiple
         style="display:none"
       />
     </div>
@@ -105,6 +106,7 @@
     <!-- Step 3: card detection preview -->
     <div id="step-preview" hidden>
       <img id="preview-img" src="" alt="Vista previa de la carta" />
+      <div id="image-batch-info" class="upload-info" aria-live="polite"></div>
       <div class="preview-actions">
         <button id="retake-btn"          class="btn btn-secondary">↩ Retomar</button>
         <button id="confirm-preview-btn" class="btn btn-primary">Continuar →</button>

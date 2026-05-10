@@ -6,6 +6,8 @@ export const state = {
   isBootstrapping: false,
   capturedDataUrl: null,
   croppedDataUrl: null,
+  capturedDataUrls: [],
+  croppedDataUrls: [],
   linkedImageUrl: "",
   linkedImageUrls: [],
   uploadMode: "image",

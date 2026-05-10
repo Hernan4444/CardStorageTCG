@@ -31,6 +31,8 @@ export function closeUploadModal() {
 export function resetUploadFlow() {
   state.capturedDataUrl = null;
   state.croppedDataUrl = null;
+  state.capturedDataUrls = [];
+  state.croppedDataUrls = [];
   state.linkedImageUrl = "";
   state.linkedImageUrls = [];
   state.uploadMode = "image";
@@ -43,6 +45,7 @@ export function resetUploadFlow() {
   document.getElementById("upload-error").textContent = "";
   document.getElementById("link_image_url").value = "";
   document.getElementById("link-batch-info").textContent = "";
+  document.getElementById("image-batch-info").textContent = "";
   document.getElementById("metadata-form").reset();
   toggleOtherGameField();
   toggleOtherSeriesField();
@@ -165,6 +168,7 @@ export function capturePhoto() {
   canvas.height = video.videoHeight;
   canvas.getContext("2d").drawImage(video, 0, 0);
   state.capturedDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+  state.capturedDataUrls = [];
   state.uploadMode = "image";
   state.linkedImageUrl = "";
   state.linkedImageUrls = [];
@@ -173,27 +177,62 @@ export function capturePhoto() {
 }
 
 export function handleFileInput(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    setUploadError(UI_TEXT.upload.invalidImageFile);
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+
+  // Validate that all files are images
+  const invalidFiles = [];
+  for (let i = 0; i < files.length; i++) {
+    if (!files[i].type.startsWith("image/")) {
+      invalidFiles.push(files[i].name);
+    }
+  }
+
+  if (invalidFiles.length > 0) {
+    setUploadError(UI_TEXT.upload.invalidImageFiles(invalidFiles.length));
     return;
   }
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    state.capturedDataUrl = ev.target.result;
-    state.uploadMode = "image";
-    state.linkedImageUrl = "";
-    state.linkedImageUrls = [];
-    processCapture();
-  };
-  reader.readAsDataURL(file);
+
+  if (files.length > 50) {
+    setUploadError(UI_TEXT.upload.tooManyFiles);
+    return;
+  }
+
+  state.capturedDataUrls = [];
+  state.capturedDataUrl = null;
+  state.croppedDataUrls = [];
+  state.croppedDataUrl = null;
+  state.uploadMode = "image";
+  state.linkedImageUrl = "";
+  state.linkedImageUrls = [];
+
+  const fileArray = Array.from(files);
+  let loadedCount = 0;
+
+  fileArray.forEach((file) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      state.capturedDataUrls.push(ev.target.result);
+      loadedCount++;
+
+      if (loadedCount === fileArray.length) {
+        // All files loaded
+        state.capturedDataUrl = state.capturedDataUrls[0];
+        processCaptureBatch();
+      }
+    };
+    reader.onerror = () => {
+      setUploadError(UI_TEXT.upload.fileReadError(file.name));
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 export async function processCapture() {
   showStep("step-preview");
   document.getElementById("preview-img").src = "";
   document.getElementById("preview-img").classList.add("loading");
+  document.getElementById("image-batch-info").textContent = "";
 
   try {
     const result = await api.processImage(state.capturedDataUrl);
@@ -206,6 +245,60 @@ export async function processCapture() {
     document.getElementById("preview-img").classList.remove("loading");
     setUploadError(err.message);
   }
+}
+
+export async function processCaptureBatch() {
+  showStep("step-preview");
+  document.getElementById("preview-img").src = "";
+  document.getElementById("preview-img").classList.add("loading");
+  document.getElementById("image-batch-info").textContent = "Comprimiendo imágenes...";
+
+  try {
+    const result = await api.processImages(state.capturedDataUrls);
+    state.croppedDataUrls = [];
+
+    // Extract cropped images in order
+    result.images.forEach((item) => {
+      if (item.cropped_image) {
+        state.croppedDataUrls.push(item.cropped_image);
+      }
+    });
+
+    if (state.croppedDataUrls.length === 0) {
+      setUploadError(UI_TEXT.upload.noImagesCompressed);
+      return;
+    }
+
+    state.croppedDataUrl = state.croppedDataUrls[0];
+
+    const img = document.getElementById("preview-img");
+    img.src = state.croppedDataUrl;
+    img.classList.remove("loading");
+
+    updateImageBatchInfo();
+    setUploadError("");
+  } catch (err) {
+    document.getElementById("preview-img").classList.remove("loading");
+    setUploadError(err.message);
+  }
+}
+
+function updateImageBatchInfo() {
+  const batchCount = state.croppedDataUrls.length;
+  const infoEl = document.getElementById("image-batch-info");
+  if (!infoEl) return;
+
+  if (batchCount <= 0) {
+    infoEl.textContent = "";
+    return;
+  }
+
+  if (batchCount === 1) {
+    infoEl.textContent = UI_TEXT.upload.singleImageReady;
+    return;
+  }
+
+  infoEl.textContent = UI_TEXT.upload.multiImagesReady(batchCount);
 }
 
 export async function saveCard(e) {
@@ -228,25 +321,33 @@ export async function saveCard(e) {
     return;
   }
 
+  // Determine which batch to use
   const linkUrls = state.linkedImageUrls.length
     ? state.linkedImageUrls
     : (state.linkedImageUrl ? [state.linkedImageUrl] : []);
+
+  const imageDataUrls = state.croppedDataUrls.length
+    ? state.croppedDataUrls
+    : (state.croppedDataUrl ? [state.croppedDataUrl] : []);
 
   if (state.uploadMode === "link" && !linkUrls.length) {
     setUploadError(UI_TEXT.upload.missingLink);
     return;
   }
 
-  if (state.uploadMode !== "link" && !state.croppedDataUrl) {
+  if (state.uploadMode !== "link" && !imageDataUrls.length) {
     setUploadError(UI_TEXT.upload.missingImage);
     return;
   }
 
   btn.disabled = true;
-  btn.textContent =
-    state.uploadMode === "link" && linkUrls.length > 1
-      ? UI_TEXT.upload.batchSaveInProgress
-      : UI_TEXT.admin.saveInProgress;
+
+  const isBatchLinks = state.uploadMode === "link" && linkUrls.length > 1;
+  const isBatchImages = state.uploadMode !== "link" && imageDataUrls.length > 1;
+
+  btn.textContent = isBatchLinks || isBatchImages
+    ? UI_TEXT.upload.batchSaveInProgress
+    : UI_TEXT.admin.saveInProgress;
 
   try {
     if (state.uploadMode === "link") {
@@ -272,12 +373,27 @@ export async function saveCard(e) {
         });
       }
     } else {
-      await api.createCard(state.croppedDataUrl, {
-        game_name: gameName,
-        series,
-        language,
-        card_type: cardType,
-      });
+      if (imageDataUrls.length > 1) {
+        const batchResult = await api.createCardsFromImages(imageDataUrls, {
+          game_name: gameName,
+          series,
+          language,
+          card_type: cardType,
+        });
+
+        if (batchResult.failed_count > 0) {
+          alert(UI_TEXT.upload.batchPartialImages(batchResult.created_count, batchResult.failed_count));
+        } else {
+          alert(UI_TEXT.upload.batchSuccessImages(batchResult.created_count));
+        }
+      } else {
+        await api.createCard(imageDataUrls[0], {
+          game_name: gameName,
+          series,
+          language,
+          card_type: cardType,
+        });
+      }
     }
     closeUploadModal();
     await loadGameNames();
