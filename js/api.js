@@ -52,6 +52,10 @@ export const api = (() => {
   createCardsFromImages(imageDataUrls, { game_name, series, language, card_type }) {
     return _request("POST", "/api/cards/batch-images", {
       images: imageDataUrls,
+      game_name,
+      anime: series,
+      language,
+      card_type,
     });
   },
 
