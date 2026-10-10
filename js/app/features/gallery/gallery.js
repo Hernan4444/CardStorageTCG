@@ -11,6 +11,7 @@ import { openDetailModal } from "../detail/detail.js";
 import { populateGameOptions, populateSeriesOptions } from "../upload/upload.js";
 import {
   confirmDelete,
+  handleAdminRequestError,
   openEditCard,
   populateEditGameOptions,
   populateEditSeriesOptions,
@@ -221,10 +222,50 @@ export async function toggleFavorite(id, button) {
   const card = state.cards.find((item) => item.id === id);
   if (!card) return;
 
+  const wasFavorite = Boolean(card.is_favorite);
   if (button) button.disabled = true;
   try {
-    await api.updateFavorite(id, !card.is_favorite, state.adminPassword);
-    await loadGallery();
+    const updatedCard = await api.updateFavorite(id, !wasFavorite, state.adminPassword);
+    if (typeof updatedCard.is_favorite !== "boolean") {
+      throw new Error("El backend no devolvió el estado actualizado del favorito.");
+    }
+
+    card.is_favorite = updatedCard.is_favorite;
+    state.favoriteCount = Math.max(
+      0,
+      state.favoriteCount + Number(updatedCard.is_favorite) - Number(wasFavorite)
+    );
+    updateFavoritesCount();
+
+    if (state.activeCollection === "favorites" && wasFavorite && !updatedCard.is_favorite) {
+      state.cards = state.cards.filter((item) => item.id !== id);
+      button.closest(".card-tile")?.remove();
+      state.totalPages = Math.max(
+        1,
+        Math.ceil(state.favoriteCount / APP_CONFIG.gallery.perPage)
+      );
+
+      if (state.cards.length === 0 && state.currentPage > state.totalPages) {
+        state.currentPage = state.totalPages;
+        await loadFavorites();
+        return;
+      }
+      if (state.cards.length === 0) {
+        renderCards([]);
+      }
+    } else {
+      button.classList.toggle("is-favorite", updatedCard.is_favorite);
+      button.textContent = updatedCard.is_favorite ? "★" : "☆";
+      button.setAttribute("aria-pressed", String(updatedCard.is_favorite));
+      const label = updatedCard.is_favorite
+        ? UI_TEXT.gallery.removeFavorite
+        : UI_TEXT.gallery.addFavorite;
+      button.setAttribute("aria-label", label);
+      button.title = label;
+      button.disabled = false;
+    }
+
+    renderPagination();
   } catch (error) {
     handleAdminRequestError(error);
     alert(UI_TEXT.admin.favoriteUpdateFailed(error.message));
@@ -388,6 +429,18 @@ export function buildCardTile(card) {
   const favoriteLabel = isFavorite
     ? UI_TEXT.gallery.removeFavorite
     : UI_TEXT.gallery.addFavorite;
+  const favoriteAction = state.isAdmin
+    ? `
+      <button
+        class="favorite-toggle${isFavorite ? " is-favorite" : ""}"
+        type="button"
+        data-id="${escHtml(card.id)}"
+        aria-label="${favoriteLabel}"
+        aria-pressed="${isFavorite}"
+        title="${favoriteLabel}"
+      >${isFavorite ? "★" : "☆"}</button>
+    `
+    : "";
 
   article.innerHTML = `
     <div class="card-img-wrap">
@@ -400,14 +453,7 @@ export function buildCardTile(card) {
       <span class="badge badge-language" title="${escHtml(language)}">
         <img src="${escHtml(languageFlagSrc)}" alt="${escHtml(language)}" class="badge-language-img" loading="lazy" />
       </span>
-      <button
-        class="favorite-toggle${isFavorite ? " is-favorite" : ""}"
-        type="button"
-        data-id="${escHtml(card.id)}"
-        aria-label="${favoriteLabel}"
-        aria-pressed="${isFavorite}"
-        title="${favoriteLabel}"
-      >${isFavorite ? "★" : "☆"}</button>
+      ${favoriteAction}
     </div>
     <div class="card-actions">
       <button class="btn btn-detail" data-id="${card.id}">Ver detalle</button>
@@ -416,10 +462,13 @@ export function buildCardTile(card) {
   `;
 
   article.querySelector(".btn-detail").addEventListener("click", () => openDetailModal(card.id));
-  article.querySelector(".favorite-toggle").addEventListener("click", (event) => {
-    event.stopPropagation();
-    toggleFavorite(card.id, event.currentTarget);
-  });
+  const favoriteButton = article.querySelector(".favorite-toggle");
+  if (favoriteButton) {
+    favoriteButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleFavorite(card.id, event.currentTarget);
+    });
+  }
 
   const editButton = article.querySelector(".btn-edit");
   if (editButton) {
