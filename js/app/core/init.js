@@ -47,12 +47,16 @@ import {
   restoreAdminSession,
 } from "../features/admin/admin.js";
 import { closeDetailModal, loadHD } from "../features/detail/detail.js";
+import { initializeTagPicker } from "../features/tags/tag-picker.js";
 
 export function initializeApp() {
   document.addEventListener("DOMContentLoaded", async () => {
     state.isBootstrapping = true;
     updateFavoritesCount();
     document.getElementById("page-size-select").value = String(state.pageSize);
+    initializeTagPicker("filter-tag-chips", "tag-filter-input", "add-filter-tag-btn");
+    initializeTagPicker("upload-tag-chips", "upload-tag-input", "add-upload-tag-btn");
+    initializeTagPicker("edit-tag-chips", "edit-tag-input", "add-edit-tag-btn");
     setGalleryBootstrapping(true);
     renderGalleryLoading("Conectando con el backend...");
 

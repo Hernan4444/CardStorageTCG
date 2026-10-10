@@ -7,6 +7,11 @@ import { APP_CONFIG, CARD_FIELDS } from "../../config/constants.js";
 import { UI_TEXT } from "../../config/messages.js";
 import { escHtml } from "../../core/helpers.js";
 import { savePageSize, state, wait } from "../../core/state.js";
+import {
+  getTagPickerValues,
+  setTagPickerValues,
+  setTagSuggestions,
+} from "../tags/tag-picker.js";
 import { openDetailModal } from "../detail/detail.js";
 import { populateGameOptions, populateSeriesOptions } from "../upload/upload.js";
 import {
@@ -86,6 +91,8 @@ export async function loadGallery(options = {}) {
         series: state.selectedSeries,
         page: state.currentPage,
         perPage: state.pageSize,
+        tagNames: state.selectedTags,
+        tagMatch: state.tagMatch,
       });
       if (sequence !== galleryLoadSequence || state.activeCollection !== "all") return;
 
@@ -94,6 +101,8 @@ export async function loadGallery(options = {}) {
       state.currentPage = result.pagination?.page || 1;
       state.totalPages = result.pagination?.total_pages || 1;
       state.favoriteCount = result.favorite_count || 0;
+      state.availableTags = result.available_tags || [];
+      setTagSuggestions(state.availableTags);
       updateFavoritesCount();
 
       populateGameOptions();
@@ -174,6 +183,8 @@ export async function loadFavorites() {
     state.currentPage = result.pagination?.page || 1;
     state.totalPages = result.pagination?.total_pages || 1;
     state.favoriteCount = result.favorite_count || 0;
+    state.availableTags = result.available_tags || [];
+    setTagSuggestions(state.availableTags);
     updateFavoritesCount();
     renderCards(state.cards);
     renderPagination();
@@ -378,6 +389,8 @@ export async function applyFilter() {
 
   state.selectedGames = [...gameSelect.selectedOptions].map((o) => o.value);
   state.selectedSeries = [...seriesFilter.selectedOptions].map((o) => o.value);
+  state.selectedTags = getTagPickerValues("filter-tag-chips");
+  state.tagMatch = document.getElementById("tag-match-select").value;
   state.currentPage = 1;
 
   await loadSeriesNames(state.selectedGames);
@@ -397,6 +410,10 @@ export function clearFilter() {
 
   state.selectedGames = [];
   state.selectedSeries = [];
+  state.selectedTags = [];
+  state.tagMatch = "OR";
+  setTagPickerValues("filter-tag-chips", []);
+  document.getElementById("tag-match-select").value = "OR";
   state.currentPage = 1;
   loadSeriesNames([]);
   loadGallery();

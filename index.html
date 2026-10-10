@@ -50,6 +50,19 @@
         <label class="filter-label" for="series-filter">Serie</label>
         <select id="series-filter" multiple size="5" aria-label="Filtro de series"></select>
       </div>
+      <div class="filter-col tag-filter-col">
+        <label class="filter-label" for="tag-filter-input">Tags</label>
+        <div class="tag-entry">
+          <input id="tag-filter-input" type="text" list="tag-suggestions" maxlength="40" placeholder="Busca y agrega un tag" />
+          <button id="add-filter-tag-btn" class="btn btn-secondary" type="button">Agregar</button>
+        </div>
+        <div id="filter-tag-chips" class="tag-chips" aria-live="polite"></div>
+        <label class="filter-label" for="tag-match-select">Coincidencia</label>
+        <select id="tag-match-select" class="filter-select">
+          <option value="OR">Cualquiera de los tags (OR)</option>
+          <option value="AND">Todos los tags (AND)</option>
+        </select>
+      </div>
       <div class="filter-actions">
         <button id="apply-filter-btn" class="btn btn-primary">Buscar</button>
         <button id="clear-filter-btn" class="btn btn-secondary">Limpiar</button>
@@ -66,6 +79,8 @@
       <option value="100">100</option>
     </select>
   </div>
+
+  <datalist id="tag-suggestions"></datalist>
 
   <div id="card-grid"></div>
   <div id="cards-pagination" class="pagination" hidden>
@@ -195,6 +210,16 @@
           </select>
         </div>
 
+        <div class="form-group">
+          <label for="upload-tag-input">Tags</label>
+          <div class="tag-entry">
+            <input id="upload-tag-input" type="text" list="tag-suggestions" maxlength="40" placeholder="Ej.: foil, favorita, pendiente" />
+            <button id="add-upload-tag-btn" class="btn btn-secondary" type="button">Agregar</button>
+          </div>
+          <div id="upload-tag-chips" class="tag-chips" aria-live="polite"></div>
+          <small class="hint-text">Escribe un tag nuevo o elige uno existente. Los tags se aplican a todas las cartas del lote.</small>
+        </div>
+
         <div id="upload-error" role="alert"></div>
         <div id="link-batch-info" class="upload-info" aria-live="polite"></div>
 
@@ -290,6 +315,15 @@
           <option value="normal">Normal</option>
           <option value="foil">Foil ✨</option>
         </select>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-tag-input">Tags</label>
+        <div class="tag-entry">
+          <input id="edit-tag-input" type="text" list="tag-suggestions" maxlength="40" placeholder="Agrega un tag" />
+          <button id="add-edit-tag-btn" class="btn btn-secondary" type="button">Agregar</button>
+        </div>
+        <div id="edit-tag-chips" class="tag-chips" aria-live="polite"></div>
       </div>
 
       <div id="edit-error" role="alert"></div>

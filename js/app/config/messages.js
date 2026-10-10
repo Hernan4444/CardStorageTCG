@@ -14,6 +14,7 @@ export const UI_TEXT = {
     addFavorite: "Agregar a favoritos",
     removeFavorite: "Quitar de favoritos",
     pageIndicator: (page, total) => `Página ${page} de ${total}`,
+    invalidTag: "Ingresa un tag de una sola palabra (máximo 40 caracteres).",
   },
   admin: {
     unlockToDelete: "Debes desbloquear el modo admin para eliminar cartas.",
@@ -72,5 +73,7 @@ export const UI_TEXT = {
     languageLabel: "Idioma",
     typeLabel: "Tipo",
     uploadDateLabel: "Subida",
+    tagsLabel: "Tags",
+    noTags: "Sin tags",
   },
 };

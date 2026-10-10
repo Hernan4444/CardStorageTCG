@@ -7,6 +7,7 @@ import { CARD_FIELDS } from "../../config/constants.js";
 import { UI_TEXT } from "../../config/messages.js";
 import { state } from "../../core/state.js";
 import { escHtml, setUploadError } from "../../core/helpers.js";
+import { getTagPickerValues, setTagPickerValues } from "../tags/tag-picker.js";
 import { loadGallery, loadGameNames, loadSeriesNames } from "../gallery/gallery.js";
 
 export function openUploadModal() {
@@ -47,6 +48,7 @@ export function resetUploadFlow() {
   document.getElementById("link-batch-info").textContent = "";
   document.getElementById("image-batch-info").textContent = "";
   document.getElementById("metadata-form").reset();
+  setTagPickerValues("upload-tag-chips", []);
   toggleOtherGameField();
   toggleOtherSeriesField();
 }
@@ -315,6 +317,7 @@ export async function saveCard(e) {
   const series = getSelectedSeriesName(form);
   const language = form.language.value.trim();
   const cardType = form.card_type.value;
+  const tags = getTagPickerValues("upload-tag-chips");
 
   if (!gameName || !series || !language) {
     setUploadError(UI_TEXT.upload.missingFields);
@@ -357,6 +360,7 @@ export async function saveCard(e) {
           series,
           language,
           card_type: cardType,
+          tags,
         });
 
         if (batchResult.failed_count > 0) {
@@ -370,6 +374,7 @@ export async function saveCard(e) {
           series,
           language,
           card_type: cardType,
+          tags,
         });
       }
     } else {
@@ -379,6 +384,7 @@ export async function saveCard(e) {
           series,
           language,
           card_type: cardType,
+          tags,
         });
 
         if (batchResult.failed_count > 0) {
@@ -392,6 +398,7 @@ export async function saveCard(e) {
           series,
           language,
           card_type: cardType,
+          tags,
         });
       }
     }

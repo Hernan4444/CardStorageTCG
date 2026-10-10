@@ -37,6 +37,12 @@ export async function openDetailModal(id) {
       <p><strong>${UI_TEXT.detail.seriesLabel}:</strong> ${escHtml(card.anime || "-")}</p>
       <p><strong>${UI_TEXT.detail.languageLabel}:</strong> ${escHtml(card.language)}</p>
       <p><strong>${UI_TEXT.detail.typeLabel}:</strong> ${escHtml(card.card_type)}</p>
+      <div class="detail-tags">
+        <strong>${UI_TEXT.detail.tagsLabel}:</strong>
+        ${card.tags?.length
+          ? `<div class="tag-chips">${card.tags.map((tag) => `<span class="tag-chip">${escHtml(tag)}</span>`).join("")}</div>`
+          : `<span class="detail-no-tags">${UI_TEXT.detail.noTags}</span>`}
+      </div>
       <p class="card-date">${UI_TEXT.detail.uploadDateLabel}: ${new Date(card.created_at).toLocaleDateString("es")}</p>
     `;
   } catch (err) {

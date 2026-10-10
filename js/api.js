@@ -40,46 +40,50 @@ export const api = (() => {
   },
 
   /** Upload cropped image + metadata. Returns the saved Card object. */
-  createCard(imageDataUrl, { game_name, series, language, card_type }) {
+  createCard(imageDataUrl, { game_name, series, language, card_type, tags = [] }) {
     return _request("POST", "/api/cards", {
       image: imageDataUrl,
       game_name,
       anime: series,
       language,
       card_type,
+      tags,
     });
   },
 
   /** Upload multiple compressed images + shared metadata in one request. */
-  createCardsFromImages(imageDataUrls, { game_name, series, language, card_type }) {
+  createCardsFromImages(imageDataUrls, { game_name, series, language, card_type, tags = [] }) {
     return _request("POST", "/api/cards/batch-images", {
       images: imageDataUrls,
       game_name,
       anime: series,
       language,
       card_type,
+      tags,
     });
   },
 
     /** Save metadata + external image URL (without Cloudinary upload). */
-    createCardFromLink(imageUrl, { game_name, series, language, card_type }) {
+    createCardFromLink(imageUrl, { game_name, series, language, card_type, tags = [] }) {
       return _request("POST", "/api/cards", {
         image_url: imageUrl,
         game_name,
         anime: series,
         language,
         card_type,
+        tags,
       });
     },
 
     /** Save metadata + many external image URLs in one request. */
-    createCardsFromLinks(imageUrls, { game_name, series, language, card_type }) {
+    createCardsFromLinks(imageUrls, { game_name, series, language, card_type, tags = [] }) {
       return _request("POST", "/api/cards/batch-links", {
         image_urls: imageUrls,
         game_name,
         anime: series,
         language,
         card_type,
+        tags,
       });
     },
 
@@ -104,6 +108,8 @@ export const api = (() => {
       page = 1,
       perPage = 20,
       favoritesOnly = false,
+      tagNames = [],
+      tagMatch = "OR",
     } = {}) {
       const params = new URLSearchParams();
       gameNames.forEach((g) => params.append("game_name", g));
@@ -111,6 +117,8 @@ export const api = (() => {
       params.set("per_page", String(perPage));
       series.forEach((serie) => params.append("anime", serie));
       if (favoritesOnly) params.set("favorites_only", "true");
+      tagNames.forEach((tag) => params.append("tag", tag));
+      if (tagNames.length) params.set("tag_match", tagMatch);
       return _request("GET", `/api/cards?${params.toString()}`);
     },
 

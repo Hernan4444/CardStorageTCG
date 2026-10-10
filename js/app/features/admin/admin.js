@@ -7,6 +7,7 @@ import { CARD_FIELDS } from "../../config/constants.js";
 import { UI_TEXT } from "../../config/messages.js";
 import { state } from "../../core/state.js";
 import { escHtml, setAdminError, setEditError } from "../../core/helpers.js";
+import { getTagPickerValues, initializeTagPicker, setTagPickerValues } from "../tags/tag-picker.js";
 import { loadGallery, loadGameNames, loadSeriesNames } from "../gallery/gallery.js";
 import { closeUploadModal } from "../upload/upload.js";
 
@@ -129,6 +130,7 @@ export function resetEditForm() {
   setEditError("");
   document.getElementById("edit_other_game_name").value = "";
   document.getElementById("edit_other_series_name").value = "";
+  setTagPickerValues("edit-tag-chips", []);
   populateEditGameOptions();
   populateEditSeriesOptions();
 }
@@ -147,6 +149,7 @@ export async function saveEditCard(e) {
   const series = getSelectedEditSeriesName(form);
   const language = form.language.value.trim();
   const cardType = form.card_type.value;
+  const tags = getTagPickerValues("edit-tag-chips");
 
   if (
     !gameName ||
@@ -175,6 +178,7 @@ export async function saveEditCard(e) {
         anime: series,
         language,
         card_type: cardType,
+        tags,
       },
       state.adminPassword
     );
@@ -331,6 +335,7 @@ export async function openEditCard(card) {
   }
 
   state.editingCardId = card.id;
+  initializeTagPicker("edit-tag-chips", "edit-tag-input", "add-edit-tag-btn", card.tags || []);
 
   const form = document.getElementById("edit-form");
   const gameSelect = document.getElementById("edit_game_name");
