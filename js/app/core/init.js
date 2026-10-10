@@ -17,6 +17,7 @@ import {
   goNextPage,
   showCollection,
   updateFavoritesCount,
+  changePageSize,
 } from "../features/gallery/gallery.js";
 import {
   openUploadModal,
@@ -51,6 +52,7 @@ export function initializeApp() {
   document.addEventListener("DOMContentLoaded", async () => {
     state.isBootstrapping = true;
     updateFavoritesCount();
+    document.getElementById("page-size-select").value = String(state.pageSize);
     setGalleryBootstrapping(true);
     renderGalleryLoading("Conectando con el backend...");
 
@@ -113,6 +115,9 @@ export function initializeApp() {
     document.getElementById("next-page-btn").addEventListener("click", goNextPage);
     document.getElementById("all-cards-tab").addEventListener("click", () => showCollection("all"));
     document.getElementById("favorites-tab").addEventListener("click", () => showCollection("favorites"));
+    document.getElementById("page-size-select").addEventListener("change", (event) =>
+      changePageSize(event.currentTarget.value)
+    );
 
     document.getElementById("close-edit-btn").addEventListener("click", closeEditModal);
     document.getElementById("cancel-edit-btn").addEventListener("click", closeEditModal);

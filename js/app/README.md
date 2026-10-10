@@ -19,6 +19,7 @@ This frontend now uses native ES modules with a single entrypoint.
 - `features/gallery/`
 - `gallery.js`: gallery rendering, filters, pagination, initial loading/retries.
 - Favorites are stored with each card in the backend spreadsheet and shown in a separate tab.
+- The gallery page size can be set to 20, 30, 50, or 100 cards and is remembered in browser local storage.
 - `features/upload/`
 - `upload.js`: upload modal, source selection, capture, preview, metadata save.
 - `features/admin/`

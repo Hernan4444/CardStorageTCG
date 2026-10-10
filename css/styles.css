@@ -186,6 +186,24 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
   width: 100%;
 }
 
+.page-size-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .6rem;
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  font-size: .88rem;
+}
+
+.page-size-control select {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: .45rem .6rem;
+}
+
 .filter-actions {
   display: flex;
   flex-direction: column;

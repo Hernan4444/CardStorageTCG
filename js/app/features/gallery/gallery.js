@@ -6,7 +6,7 @@ import { api } from "../../../api.js";
 import { APP_CONFIG, CARD_FIELDS } from "../../config/constants.js";
 import { UI_TEXT } from "../../config/messages.js";
 import { escHtml } from "../../core/helpers.js";
-import { state, wait } from "../../core/state.js";
+import { savePageSize, state, wait } from "../../core/state.js";
 import { openDetailModal } from "../detail/detail.js";
 import { populateGameOptions, populateSeriesOptions } from "../upload/upload.js";
 import {
@@ -85,7 +85,7 @@ export async function loadGallery(options = {}) {
         gameNames: state.selectedGames,
         series: state.selectedSeries,
         page: state.currentPage,
-        perPage: APP_CONFIG.gallery.perPage,
+        perPage: state.pageSize,
       });
       if (sequence !== galleryLoadSequence || state.activeCollection !== "all") return;
 
@@ -165,7 +165,7 @@ export async function loadFavorites() {
   try {
     const result = await api.getCards({
       page: state.currentPage,
-      perPage: APP_CONFIG.gallery.perPage,
+      perPage: state.pageSize,
       favoritesOnly: true,
     });
     if (sequence !== favoritesLoadSequence || state.activeCollection !== "favorites") return;
@@ -190,6 +190,23 @@ export async function loadFavorites() {
 export function updateFavoritesCount() {
   const count = document.getElementById("favorites-count");
   if (count) count.textContent = String(state.favoriteCount);
+}
+
+export function changePageSize(value) {
+  const pageSize = Number(value);
+  const previousPageSize = state.pageSize;
+
+  try {
+    savePageSize(pageSize);
+  } catch (error) {
+    const select = document.getElementById("page-size-select");
+    if (select) select.value = String(previousPageSize);
+    alert(`No se pudo guardar la cantidad de cartas por página: ${error.message}`);
+    return;
+  }
+
+  state.currentPage = 1;
+  loadGallery();
 }
 
 export function showCollection(collection) {
@@ -242,7 +259,7 @@ export async function toggleFavorite(id, button) {
       button.closest(".card-tile")?.remove();
       state.totalPages = Math.max(
         1,
-        Math.ceil(state.favoriteCount / APP_CONFIG.gallery.perPage)
+        Math.ceil(state.favoriteCount / state.pageSize)
       );
 
       if (state.cards.length === 0 && state.currentPage > state.totalPages) {

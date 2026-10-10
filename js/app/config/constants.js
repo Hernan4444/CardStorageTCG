@@ -5,6 +5,8 @@
 export const APP_CONFIG = {
   gallery: {
     perPage: 20,
+    perPageOptions: [20, 30, 50, 100],
+    pageSizeStorageKey: "cardstoragePageSize",
     initialLoadRetries: 3,
     initialLoadRetryDelayMs: 3000,
   },
