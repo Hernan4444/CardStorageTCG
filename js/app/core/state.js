@@ -12,6 +12,8 @@ export const state = {
   linkedImageUrls: [],
   uploadMode: "image",
   cards: [],
+  favoriteCount: 0,
+  activeCollection: "all",
   gameNames: [],
   seriesNames: [],
   selectedGames: [],

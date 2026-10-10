@@ -109,6 +109,32 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
   margin-bottom: .7rem;
 }
 
+.collection-tabs {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--surface2);
+}
+
+.collection-tab {
+  padding: .7rem 1rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.collection-tab:hover,
+.collection-tab.active {
+  color: var(--accent-h);
+}
+
+.collection-tab.active {
+  border-bottom-color: var(--accent-h);
+}
+
 .game-list {
   display: flex;
   flex-wrap: wrap;
@@ -287,6 +313,32 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
   width: 18px;
   height: 18px;
   display: block;
+}
+
+.favorite-toggle {
+  position: absolute;
+  top: .45rem;
+  left: .45rem;
+  z-index: 3;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(15, 15, 26, 0.78);
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.favorite-toggle.is-favorite {
+  color: #ffcf4a;
+}
+
+.favorite-toggle:focus-visible,
+.collection-tab:focus-visible {
+  outline: 2px solid var(--accent-h);
+  outline-offset: 2px;
 }
 
 .card-info { padding: .75rem .9rem .4rem; flex: 1; }

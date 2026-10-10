@@ -20,6 +20,25 @@
 
 <!-- ── Gallery ────────────────────────────────────────────────────────────── -->
 <main>
+  <nav id="collection-tabs" class="collection-tabs" role="tablist" aria-label="Colecciones">
+    <button
+      id="all-cards-tab"
+      class="collection-tab active"
+      type="button"
+      role="tab"
+      aria-selected="true"
+      aria-controls="card-grid"
+    >Todas</button>
+    <button
+      id="favorites-tab"
+      class="collection-tab"
+      type="button"
+      role="tab"
+      aria-selected="false"
+      aria-controls="card-grid"
+    >Favoritos (<span id="favorites-count">0</span>)</button>
+  </nav>
+
   <section id="cards-filter-panel" class="browser-panel">
     <h2 class="panel-title">Filtrar</h2>
     <div class="filter-row">

@@ -15,6 +15,8 @@ import {
   clearFilter,
   goPrevPage,
   goNextPage,
+  showCollection,
+  updateFavoritesCount,
 } from "../features/gallery/gallery.js";
 import {
   openUploadModal,
@@ -48,6 +50,7 @@ import { closeDetailModal, loadHD } from "../features/detail/detail.js";
 export function initializeApp() {
   document.addEventListener("DOMContentLoaded", async () => {
     state.isBootstrapping = true;
+    updateFavoritesCount();
     setGalleryBootstrapping(true);
     renderGalleryLoading("Conectando con el backend...");
 
@@ -108,6 +111,8 @@ export function initializeApp() {
     document.getElementById("clear-filter-btn").addEventListener("click", clearFilter);
     document.getElementById("prev-page-btn").addEventListener("click", goPrevPage);
     document.getElementById("next-page-btn").addEventListener("click", goNextPage);
+    document.getElementById("all-cards-tab").addEventListener("click", () => showCollection("all"));
+    document.getElementById("favorites-tab").addEventListener("click", () => showCollection("favorites"));
 
     document.getElementById("close-edit-btn").addEventListener("click", closeEditModal);
     document.getElementById("cancel-edit-btn").addEventListener("click", closeEditModal);

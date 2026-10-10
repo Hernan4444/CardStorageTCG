@@ -18,6 +18,7 @@ This frontend now uses native ES modules with a single entrypoint.
 - `init.js`: app bootstrap and event wiring.
 - `features/gallery/`
 - `gallery.js`: gallery rendering, filters, pagination, initial loading/retries.
+- Favorites are stored with each card in the backend spreadsheet and shown in a separate tab.
 - `features/upload/`
 - `upload.js`: upload modal, source selection, capture, preview, metadata save.
 - `features/admin/`

@@ -16,6 +16,9 @@ import {
   populateEditSeriesOptions,
 } from "../admin/admin.js";
 
+let galleryLoadSequence = 0;
+let favoritesLoadSequence = 0;
+
 export function renderGalleryLoading(message) {
   const grid = document.getElementById("card-grid");
   const empty = document.getElementById("empty-state");
@@ -40,7 +43,7 @@ export function setGalleryBootstrapping(isBootstrapping) {
   const empty = document.getElementById("empty-state");
 
   if (filterPanel) {
-    filterPanel.hidden = isBootstrapping;
+    filterPanel.hidden = isBootstrapping || state.activeCollection === "favorites";
   }
   if (pagination) {
     pagination.hidden = true;
@@ -51,6 +54,15 @@ export function setGalleryBootstrapping(isBootstrapping) {
 }
 
 export async function loadGallery(options = {}) {
+  const sequence = ++galleryLoadSequence;
+  if (state.activeCollection === "favorites") {
+    await loadFavorites();
+    return;
+  }
+
+  const filterPanel = document.getElementById("cards-filter-panel");
+  if (filterPanel) filterPanel.hidden = false;
+
   const {
     retries = 1,
     retryDelayMs = 0,
@@ -74,11 +86,14 @@ export async function loadGallery(options = {}) {
         page: state.currentPage,
         perPage: APP_CONFIG.gallery.perPage,
       });
+      if (sequence !== galleryLoadSequence || state.activeCollection !== "all") return;
 
       const cards = result.items || [];
       state.cards = cards;
       state.currentPage = result.pagination?.page || 1;
       state.totalPages = result.pagination?.total_pages || 1;
+      state.favoriteCount = result.favorite_count || 0;
+      updateFavoritesCount();
 
       populateGameOptions();
       populateSeriesOptions();
@@ -90,6 +105,7 @@ export async function loadGallery(options = {}) {
       renderPagination();
       return;
     } catch (err) {
+      if (sequence !== galleryLoadSequence || state.activeCollection !== "all") return;
       lastError = err;
       if (attempt < maxAttempts) {
         if (showRetryStatus) {
@@ -105,6 +121,7 @@ export async function loadGallery(options = {}) {
     }
   }
 
+  if (sequence !== galleryLoadSequence || state.activeCollection !== "all") return;
   state.cards = [];
   state.currentPage = 1;
   state.totalPages = 1;
@@ -116,7 +133,6 @@ export async function loadGallery(options = {}) {
 export function renderCards(cards, errorMsg = "") {
   const grid = document.getElementById("card-grid");
   const empty = document.getElementById("empty-state");
-
   grid.innerHTML = "";
   empty.hidden = true;
 
@@ -126,12 +142,94 @@ export function renderCards(cards, errorMsg = "") {
   }
 
   if (cards.length === 0) {
-    empty.textContent = UI_TEXT.gallery.noCards;
+    empty.textContent = state.activeCollection === "favorites"
+      ? UI_TEXT.gallery.noFavorites
+      : UI_TEXT.gallery.noCards;
     empty.hidden = false;
     return;
   }
 
   cards.forEach((card) => grid.appendChild(buildCardTile(card)));
+}
+
+export async function loadFavorites() {
+  const sequence = ++favoritesLoadSequence;
+  const pagination = document.getElementById("cards-pagination");
+  const filterPanel = document.getElementById("cards-filter-panel");
+  if (pagination) pagination.hidden = true;
+  if (filterPanel) filterPanel.hidden = true;
+  renderGalleryLoading(UI_TEXT.gallery.loading);
+  updateFavoritesCount();
+
+  try {
+    const result = await api.getCards({
+      page: state.currentPage,
+      perPage: APP_CONFIG.gallery.perPage,
+      favoritesOnly: true,
+    });
+    if (sequence !== favoritesLoadSequence || state.activeCollection !== "favorites") return;
+
+    state.cards = result.items || [];
+    state.currentPage = result.pagination?.page || 1;
+    state.totalPages = result.pagination?.total_pages || 1;
+    state.favoriteCount = result.favorite_count || 0;
+    updateFavoritesCount();
+    renderCards(state.cards);
+    renderPagination();
+  } catch (error) {
+    if (sequence !== favoritesLoadSequence || state.activeCollection !== "favorites") return;
+    state.cards = [];
+    state.currentPage = 1;
+    state.totalPages = 1;
+    renderCards([], UI_TEXT.gallery.loadError(error.message));
+    renderPagination();
+  }
+}
+
+export function updateFavoritesCount() {
+  const count = document.getElementById("favorites-count");
+  if (count) count.textContent = String(state.favoriteCount);
+}
+
+export function showCollection(collection) {
+  state.activeCollection = collection;
+
+  const allCardsTab = document.getElementById("all-cards-tab");
+  const favoritesTab = document.getElementById("favorites-tab");
+  allCardsTab.classList.toggle("active", collection === "all");
+  allCardsTab.setAttribute("aria-selected", String(collection === "all"));
+  favoritesTab.classList.toggle("active", collection === "favorites");
+  favoritesTab.setAttribute("aria-selected", String(collection === "favorites"));
+
+  if (collection === "favorites") {
+    state.currentPage = 1;
+    loadFavorites();
+    return;
+  }
+
+  favoritesLoadSequence += 1;
+  state.currentPage = 1;
+  loadGallery();
+}
+
+export async function toggleFavorite(id, button) {
+  if (!state.isAdmin || !state.adminPassword) {
+    alert(UI_TEXT.admin.unlockToFavorite);
+    return;
+  }
+
+  const card = state.cards.find((item) => item.id === id);
+  if (!card) return;
+
+  if (button) button.disabled = true;
+  try {
+    await api.updateFavorite(id, !card.is_favorite, state.adminPassword);
+    await loadGallery();
+  } catch (error) {
+    handleAdminRequestError(error);
+    alert(UI_TEXT.admin.favoriteUpdateFailed(error.message));
+    if (button) button.disabled = false;
+  }
 }
 
 export function renderPagination() {
@@ -286,6 +384,10 @@ export function buildCardTile(card) {
       <button class="btn btn-delete btn-icon" data-id="${card.id}" title="Eliminar">✕</button>
     `
     : "";
+  const isFavorite = Boolean(card.is_favorite);
+  const favoriteLabel = isFavorite
+    ? UI_TEXT.gallery.removeFavorite
+    : UI_TEXT.gallery.addFavorite;
 
   article.innerHTML = `
     <div class="card-img-wrap">
@@ -298,6 +400,14 @@ export function buildCardTile(card) {
       <span class="badge badge-language" title="${escHtml(language)}">
         <img src="${escHtml(languageFlagSrc)}" alt="${escHtml(language)}" class="badge-language-img" loading="lazy" />
       </span>
+      <button
+        class="favorite-toggle${isFavorite ? " is-favorite" : ""}"
+        type="button"
+        data-id="${escHtml(card.id)}"
+        aria-label="${favoriteLabel}"
+        aria-pressed="${isFavorite}"
+        title="${favoriteLabel}"
+      >${isFavorite ? "★" : "☆"}</button>
     </div>
     <div class="card-actions">
       <button class="btn btn-detail" data-id="${card.id}">Ver detalle</button>
@@ -306,6 +416,10 @@ export function buildCardTile(card) {
   `;
 
   article.querySelector(".btn-detail").addEventListener("click", () => openDetailModal(card.id));
+  article.querySelector(".favorite-toggle").addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleFavorite(card.id, event.currentTarget);
+  });
 
   const editButton = article.querySelector(".btn-edit");
   if (editButton) {

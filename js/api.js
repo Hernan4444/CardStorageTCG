@@ -21,7 +21,9 @@ export const api = (() => {
     const json = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      throw new Error(json.error || `HTTP ${res.status}`);
+      const error = new Error(json.error || `HTTP ${res.status}`);
+      error.status = res.status;
+      throw error;
     }
     return json;
   }
@@ -96,12 +98,19 @@ export const api = (() => {
     },
 
     /** List cards filtered by games/series and paginated. */
-    getCards({ gameNames = [], series = [], page = 1, perPage = 20 } = {}) {
+    getCards({
+      gameNames = [],
+      series = [],
+      page = 1,
+      perPage = 20,
+      favoritesOnly = false,
+    } = {}) {
       const params = new URLSearchParams();
       gameNames.forEach((g) => params.append("game_name", g));
       params.set("page", String(page));
       params.set("per_page", String(perPage));
       series.forEach((serie) => params.append("anime", serie));
+      if (favoritesOnly) params.set("favorites_only", "true");
       return _request("GET", `/api/cards?${params.toString()}`);
     },
 
@@ -120,6 +129,16 @@ export const api = (() => {
       return _request("PATCH", `/api/cards/${encodeURIComponent(id)}`, fields, {
         "X-Admin-Password": adminPassword,
       });
+    },
+
+    /** Add or remove a card from the shared favorites collection. */
+    updateFavorite(id, isFavorite, adminPassword) {
+      return _request(
+        "PATCH",
+        `/api/cards/${encodeURIComponent(id)}/favorite`,
+        { is_favorite: isFavorite },
+        { "X-Admin-Password": adminPassword }
+      );
     },
 
     /** Delete a card (also removes it from Cloudinary). */
