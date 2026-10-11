@@ -7,7 +7,12 @@ import { CARD_FIELDS } from "../../config/constants.js";
 import { UI_TEXT } from "../../config/messages.js";
 import { state } from "../../core/state.js";
 import { escHtml, setAdminError, setEditError } from "../../core/helpers.js";
-import { getTagPickerValues, initializeTagPicker, setTagPickerValues } from "../tags/tag-picker.js";
+import {
+  addTagPickerInput,
+  getTagPickerValues,
+  initializeTagPicker,
+  setTagPickerValues,
+} from "../tags/tag-picker.js";
 import { loadGallery, loadGameNames, loadSeriesNames } from "../gallery/gallery.js";
 import { closeUploadModal } from "../upload/upload.js";
 
@@ -149,6 +154,7 @@ export async function saveEditCard(e) {
   const series = getSelectedEditSeriesName(form);
   const language = form.language.value.trim();
   const cardType = form.card_type.value;
+  if (!addTagPickerInput("edit-tag-chips", "edit-tag-input")) return;
   const tags = getTagPickerValues("edit-tag-chips");
 
   if (

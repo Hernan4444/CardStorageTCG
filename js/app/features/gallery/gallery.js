@@ -8,6 +8,7 @@ import { UI_TEXT } from "../../config/messages.js";
 import { escHtml } from "../../core/helpers.js";
 import { savePageSize, state, wait } from "../../core/state.js";
 import {
+  addTagPickerInput,
   getTagPickerValues,
   setTagPickerValues,
   setTagSuggestions,
@@ -384,6 +385,8 @@ export function updateSeriesFilter(availableSeries) {
 }
 
 export async function applyFilter() {
+  if (!addTagPickerInput("filter-tag-chips", "tag-filter-input")) return;
+
   const gameSelect = document.getElementById("game-filter");
   const seriesFilter = document.getElementById("series-filter");
 

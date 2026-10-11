@@ -21,7 +21,7 @@ export function setTagSuggestions(tags) {
 export function addTagPickerInput(containerId, inputId) {
   const container = document.getElementById(containerId);
   const input = document.getElementById(inputId);
-  if (container && input) addTag(container, input);
+  return !container || !input || addTag(container, input);
 }
 
 export function initializeTagPicker(containerId, inputId, addButtonId, initialTags = []) {
@@ -68,11 +68,13 @@ export function getTagPickerValues(containerId) {
 
 function addTag(container, input) {
   const tag = input.value.trim();
-  if (!tag || tag.length > MAX_TAG_LENGTH || !TAG_PATTERN.test(tag)) {
+  if (!tag) return true;
+
+  if (tag.length > MAX_TAG_LENGTH || !TAG_PATTERN.test(tag)) {
     input.setCustomValidity(UI_TEXT.gallery.invalidTag);
     input.reportValidity();
     input.setCustomValidity("");
-    return;
+    return false;
   }
 
   const currentTags = selections.get(container) || [];
@@ -83,6 +85,7 @@ function addTag(container, input) {
   }
   input.value = "";
   input.focus();
+  return true;
 }
 
 function normalizeTags(tags) {
